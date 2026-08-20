@@ -10,7 +10,7 @@
     --sf-blue:#29b5e8; --sf-dark:#0a4d7c; --sf-light:#e8f6fd; --sf-accent:#1a8fc1;
     --sf-gray:#f4f7fb; --sf-border:#d0e8f5; --sf-text:#1a2e3b; --sf-muted:#5a7a8a;
     --critical:#e63946; --major:#f4a261; --minor:#2a9d8f;
-    --identified:#d68910; --resolved-green:#27ae60; --postmortem:#29b5e8;
+    --monitoring:#e67e22; --resolved-green:#27ae60; --postmortem:#29b5e8;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Segoe UI',Arial,sans-serif;background:var(--sf-gray);color:var(--sf-text);font-size:13px;}
@@ -23,32 +23,32 @@
   header .badge{margin-left:auto;background:rgba(41,181,232,0.2);border:1px solid var(--sf-blue);
     color:var(--sf-blue);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;}
 
-  /* ACTIVE INCIDENT BANNER */
-  .active-banner{background:linear-gradient(90deg,#6d4c00,var(--identified));color:white;
+  /* MONITORING BANNER */
+  .monitor-banner{background:linear-gradient(90deg,#7d3c00,var(--monitoring));color:white;
     padding:12px 28px;display:flex;align-items:center;gap:12px;font-size:0.82rem;}
-  .active-dot{width:10px;height:10px;border-radius:50%;background:#ffe27a;
-    animation:pulse-active 1.5s infinite;flex-shrink:0;}
-  @keyframes pulse-active{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(1.4);}}
-  .active-banner strong{font-size:0.88rem;}
-  .active-banner .act-ts{margin-left:auto;opacity:0.85;font-size:0.75rem;white-space:nowrap;}
+  .monitor-dot{width:10px;height:10px;border-radius:50%;background:#ffe066;
+    animation:pulse-mon 2s infinite;flex-shrink:0;}
+  @keyframes pulse-mon{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.3);}}
+  .monitor-banner strong{font-size:0.88rem;}
+  .monitor-banner .mon-ts{margin-left:auto;opacity:0.85;font-size:0.75rem;white-space:nowrap;}
 
-  /* Active identified card */
-  .identified-card{background:white;border-radius:10px;padding:18px 20px;
-    border-left:5px solid var(--identified);box-shadow:0 2px 12px rgba(214,137,16,0.20);margin-bottom:6px;}
-  .ic-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
-  .ic-name{font-size:1rem;font-weight:700;color:var(--sf-dark);}
-  .ic-meta{font-size:0.75rem;color:var(--sf-muted);}
-  .ic-body{font-size:0.78rem;color:#334;line-height:1.6;background:#fffbf0;
-    border-radius:6px;padding:10px 14px;border:1px solid #f5d87a;margin-bottom:8px;}
-  .ic-metrics{display:flex;gap:14px;flex-wrap:wrap;}
-  .ic-metric{background:#fffbf0;border:1px solid #f5d87a;border-radius:8px;
+  /* Monitoring card */
+  .monitor-card{background:white;border-radius:10px;padding:18px 20px;
+    border-left:5px solid var(--monitoring);box-shadow:0 2px 12px rgba(230,126,34,0.18);margin-bottom:6px;}
+  .mc-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+  .mc-name{font-size:1rem;font-weight:700;color:var(--sf-dark);}
+  .mc-meta{font-size:0.75rem;color:var(--sf-muted);}
+  .mc-body{font-size:0.78rem;color:#334;line-height:1.6;background:#fff8f0;
+    border-radius:6px;padding:10px 14px;border:1px solid #fad7a0;margin-bottom:8px;}
+  .mc-metrics{display:flex;gap:14px;flex-wrap:wrap;}
+  .mc-metric{background:#fff8f0;border:1px solid #fad7a0;border-radius:8px;
     padding:6px 12px;font-size:0.72rem;text-align:center;}
-  .ic-metric-val{font-size:1rem;font-weight:700;color:var(--identified);}
-  .ic-metric-lbl{font-size:0.62rem;color:var(--sf-muted);text-transform:uppercase;margin-top:1px;}
-  .ic-components{font-size:0.68rem;color:var(--sf-muted);margin-top:8px;}
+  .mc-metric-val{font-size:1rem;font-weight:700;color:var(--monitoring);}
+  .mc-metric-lbl{font-size:0.62rem;color:var(--sf-muted);text-transform:uppercase;margin-top:1px;}
+  .mc-components{font-size:0.68rem;color:var(--sf-muted);margin-top:8px;}
 
-  .badge-status-identified{background:#fff3cc;color:#7d5a00;animation:pulse-badge-id 2s infinite;}
-  @keyframes pulse-badge-id{0%,100%{opacity:1;}50%{opacity:0.65;};}
+  .badge-status-mon{background:#fef0dc;color:#a04000;animation:pulse-badge-mon 2.5s infinite;}
+  @keyframes pulse-badge-mon{0%,100%{opacity:1;}50%{opacity:0.6;};}
 
   .dashboard{padding:24px 28px;max-width:1600px;margin:0 auto;}
   .section-title{font-size:0.95rem;font-weight:700;color:var(--sf-dark);text-transform:uppercase;
@@ -63,14 +63,14 @@
   .kpi-card.critical{border-top-color:var(--critical);}
   .kpi-card.major-kpi{border-top-color:var(--major);}
   .kpi-card.minor-kpi{border-top-color:var(--minor);}
-  .kpi-card.identified-kpi{border-top-color:var(--identified);}
+  .kpi-card.monitoring-kpi{border-top-color:var(--monitoring);}
   .kpi-card.resolved-kpi{border-top-color:var(--resolved-green);}
   .kpi-card.postmortem-card{border-top-color:var(--postmortem);}
   .kpi-number{font-size:2.1rem;font-weight:800;color:var(--sf-dark);line-height:1;}
   .kpi-card.critical .kpi-number{color:var(--critical);}
   .kpi-card.major-kpi .kpi-number{color:var(--major);}
   .kpi-card.minor-kpi .kpi-number{color:var(--minor);}
-  .kpi-card.identified-kpi .kpi-number{color:var(--identified);}
+  .kpi-card.monitoring-kpi .kpi-number{color:var(--monitoring);}
   .kpi-card.resolved-kpi .kpi-number{color:var(--resolved-green);}
   .kpi-label{font-size:0.7rem;color:var(--sf-muted);text-transform:uppercase;font-weight:600;margin-top:5px;letter-spacing:0.5px;}
   .kpi-sub{font-size:0.65rem;color:var(--sf-muted);margin-top:2px;}
@@ -116,8 +116,8 @@
   tr:hover td{background:var(--sf-light);}
   tr:nth-child(even) td{background:#fafcfe;}
   tr:nth-child(even):hover td{background:var(--sf-light);}
-  tr.row-identified td{background:#fffbf0 !important;}
-  tr.row-identified:hover td{background:#fff3cc !important;}
+  tr.row-monitoring td{background:#fff8f0 !important;}
+  tr.row-monitoring:hover td{background:#fef0dc !important;}
 
   .badge-impact{display:inline-block;padding:2px 8px;border-radius:10px;
     font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
@@ -163,45 +163,47 @@
   <div class="badge">50 Incidents</div>
 </header>
 
-<!-- ACTIVE INCIDENT BANNER -->
-<div class="active-banner">
-  <div class="active-dot"></div>
+<!-- MONITORING BANNER -->
+<div class="monitor-banner">
+  <div class="monitor-dot"></div>
   <div>
-    <strong>⚠️ ACTIVE — INC20000168 (IDENTIFIED / MAJOR)</strong> &nbsp;|&nbsp;
-    Azure - East US 2 (Virginia) — PrivateLink / private connectivity disruption &nbsp;|&nbsp;
-    Investigating; CSP engaged &nbsp;|&nbsp;
-    Start: 08:25 CDT Aug 20 &nbsp;|&nbsp; ETA not yet available &nbsp;|&nbsp; Next update within 30 min
+    <strong>🔶 MONITORING — INC20000168 (MAJOR)</strong> &nbsp;|&nbsp;
+    Azure - East US 2 (Virginia) — PrivateLink / private connectivity &nbsp;|&nbsp;
+    CSP mitigation implemented; monitoring in progress &nbsp;|&nbsp;
+    Impact: 08:25–09:10 CDT Aug 20 (0.75 hrs) &nbsp;|&nbsp; Awaiting formal resolution
   </div>
-  <div class="act-ts">Updated: Aug 20 2026 09:19 CDT</div>
+  <div class="mon-ts">Updated: Aug 20 2026 09:39 CDT</div>
 </div>
 
 <div class="dashboard">
 
-  <!-- Active Identified Incident -->
-  <div class="section-title">⚠️ Active Incident — Under Investigation</div>
-  <div class="identified-card">
-    <div class="ic-header">
-      <span class="badge-impact badge-status-identified">⚠ IDENTIFIED</span>
+  <!-- Active Monitoring Incident -->
+  <div class="section-title">🔶 Active Monitoring Incident</div>
+  <div class="monitor-card">
+    <div class="mc-header">
+      <span class="badge-impact badge-status-mon">● MONITORING</span>
       <span class="badge-impact badge-major">MAJOR</span>
-      <span class="ic-name">INC20000168</span>
+      <span class="mc-name">INC20000168</span>
       <span style="font-family:monospace;font-size:0.7rem;color:var(--sf-muted)">ID: n54hrszdq7h7</span>
-      <span class="ic-meta">Created: Aug 20 2026 08:47 CDT &nbsp;|&nbsp; 2 updates &nbsp;|&nbsp; Not yet resolved</span>
+      <span class="mc-meta">Created: Aug 20 2026 08:47 CDT &nbsp;|&nbsp; 3 updates &nbsp;|&nbsp; Not yet formally resolved</span>
     </div>
-    <div class="ic-body">
-      <strong>Current status:</strong> Investigating an issue with Snowflake Data Cloud. CSP engaged to investigate and troubleshoot further. Next update within 30 minutes.<br><br>
-      <strong>Customer experience:</strong> Customers hosted in the specified regions may have been unable to connect to Snowflake via private connectivity solutions, such as PrivateLink.<br><br>
-      <strong>ETA:</strong> An ETA is not yet available. We'll provide one as soon as possible.<br><br>
-      <strong>Incident start time:</strong> 13:25 UTC (08:25 CDT) August 20, 2026
+    <div class="mc-body">
+      <strong>Current status:</strong> CSP has implemented a mitigation for this issue. Continuing to monitor the environment until confident all services are functioning properly.<br><br>
+      <strong>Customer experience:</strong> Customers in the specified regions may have been unable to connect to Snowflake via private connectivity solutions, such as PrivateLink. Other connection methods were unaffected.<br><br>
+      <strong>Incident window:</strong> Start 13:25 UTC (08:25 CDT) → End 14:10 UTC (09:10 CDT) August 20, 2026<br><br>
+      <strong>Preliminary root cause:</strong> A third-party cloud platform experienced a virtual networking infrastructure issue, preventing customers from connecting to Snowflake via private connectivity solutions, such as PrivateLink.
     </div>
-    <div class="ic-metrics">
-      <div class="ic-metric"><div class="ic-metric-val">N/A</div><div class="ic-metric-lbl">Duration (ongoing)</div></div>
-      <div class="ic-metric"><div class="ic-metric-val">N/A</div><div class="ic-metric-lbl">Resolution (pending)</div></div>
-      <div class="ic-metric"><div class="ic-metric-val">2</div><div class="ic-metric-lbl">Total Updates</div></div>
-      <div class="ic-metric"><div class="ic-metric-val">Azure</div><div class="ic-metric-lbl">Platform</div></div>
-      <div class="ic-metric"><div class="ic-metric-val">East US 2 (Virginia)</div><div class="ic-metric-lbl">Region</div></div>
+    <div class="mc-metrics">
+      <div class="mc-metric"><div class="mc-metric-val">0.75 hrs</div><div class="mc-metric-lbl">Duration (end−start)</div></div>
+      <div class="mc-metric"><div class="mc-metric-val">N/A</div><div class="mc-metric-lbl">Resolution (pending)</div></div>
+      <div class="mc-metric"><div class="mc-metric-val">3</div><div class="mc-metric-lbl">Total Updates</div></div>
+      <div class="mc-metric"><div class="mc-metric-val">Azure</div><div class="mc-metric-lbl">Platform</div></div>
+      <div class="mc-metric"><div class="mc-metric-val">East US 2 (Virginia)</div><div class="mc-metric-lbl">Region</div></div>
+      <div class="mc-metric"><div class="mc-metric-val">08:25 CDT</div><div class="mc-metric-lbl">Start (Aug 20)</div></div>
+      <div class="mc-metric"><div class="mc-metric-val">09:10 CDT</div><div class="mc-metric-lbl">End (Aug 20)</div></div>
     </div>
-    <div class="ic-components">
-      <strong>Affected:</strong> Azure - East US 2 (Virginia) - Security and Privacy Features (partial_outage → partial_outage — investigating)
+    <div class="mc-components">
+      <strong>Affected:</strong> Azure - East US 2 (Virginia) - Security and Privacy Features (partial_outage → partial_outage — monitoring)
     </div>
   </div>
 
@@ -228,10 +230,10 @@
       <div class="kpi-label">Minor</div>
       <div class="kpi-sub">20% of total</div>
     </div>
-    <div class="kpi-card identified-kpi">
+    <div class="kpi-card monitoring-kpi">
       <div class="kpi-number">1</div>
-      <div class="kpi-label">Identified</div>
-      <div class="kpi-sub">Active now ⚠</div>
+      <div class="kpi-label">Monitoring</div>
+      <div class="kpi-sub">Active now ●</div>
     </div>
     <div class="kpi-card resolved-kpi">
       <div class="kpi-number">5</div>
@@ -291,8 +293,8 @@
       <div><strong>Resolution (hrs)</strong> = <code>incident_resolved − incident_start_time</code> — full MTTR lifecycle</div>
     </div>
     <div class="metric-legend-item">
-      <div class="metric-dot" style="background:#d68910"></div>
-      <div><strong>INC20000168</strong> excluded from time charts (no end/resolved time yet) &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</div>
+      <div class="metric-dot" style="background:#e67e22"></div>
+      <div><strong>INC20000168</strong> Duration 0.75 hrs included &nbsp;|&nbsp; Resolution N/A (monitoring — pending) &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</div>
     </div>
   </div>
   <div class="chart-grid-2" style="margin-top:14px;">
@@ -302,7 +304,7 @@
     </div>
     <div class="chart-card">
       <h3>⏱ Duration vs Resolution (Hours) — Top 20 by Resolution</h3>
-      <p class="chart-subtitle">Blue = Duration (end−start) &nbsp;|&nbsp; Dark = Resolution (resolved−start) &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 &amp; INC20000168 excluded</p>
+      <p class="chart-subtitle">Blue = Duration (end−start) &nbsp;|&nbsp; Dark = Resolution (resolved−start) &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 excluded &nbsp;|&nbsp; INC20000168 resolution excluded (pending)</p>
       <div class="chart-container xtall"><canvas id="chartDuration"></canvas></div>
     </div>
   </div>
@@ -340,7 +342,7 @@
   <div class="section-title">Complete Incident Summary</div>
   <div class="table-card">
     <h3>All 50 Incidents — One Row Per Incident — Latest Update — All Times CDT (UTC−5)</h3>
-    <p class="table-subtitle">Duration = end_time − start_time &nbsp;|&nbsp; Resolution = incident_resolved − start_time &nbsp;|&nbsp; ⚠️ = identified (active)</p>
+    <p class="table-subtitle">Duration = end_time − start_time &nbsp;|&nbsp; Resolution = incident_resolved − start_time &nbsp;|&nbsp; 🔶 = monitoring (active)</p>
     <p class="sort-hint">💡 Click any column header to sort — click again to reverse</p>
     <div class="table-scroll">
       <table id="allTable">
@@ -371,20 +373,20 @@
 </div>
 
 <footer>
-  Snowflake Incident Intelligence Dashboard &nbsp;|&nbsp; Source: snowflake_incidents-08-20-2026-103119.xlsx &nbsp;|&nbsp; Generated August 20, 2026 &nbsp;|&nbsp; All times CDT (UTC−5)
+  Snowflake Incident Intelligence Dashboard &nbsp;|&nbsp; Source: snowflake_incidents-08-20-2026-105131.xlsx &nbsp;|&nbsp; Generated August 20, 2026 &nbsp;|&nbsp; All times CDT (UTC−5)
   <br>Duration = incident_end_time − incident_start_time &nbsp;|&nbsp; Resolution = incident_resolved − incident_start_time
 </footer>
 
 <script>
-const IMPACT_ORDER={critical:0,major:1,minor:2,none:3,identified:4};
+const IMPACT_ORDER={critical:0,major:1,minor:2,none:3,monitoring:4};
 
 function impactBadge(impact){
   const cls={critical:'badge-critical',major:'badge-major',minor:'badge-minor',none:'badge-none'};
   return`<span class="badge-impact ${cls[impact]||'badge-none'}">${impact.toUpperCase()}</span>`;
 }
 function statusBadge(s){
-  if(s==='postmortem')   return`<span class="badge-impact badge-status-pm">POSTMORTEM</span>`;
-  if(s==='identified')   return`<span class="badge-impact badge-status-identified">⚠ IDENTIFIED</span>`;
+  if(s==='postmortem')  return`<span class="badge-impact badge-status-pm">POSTMORTEM</span>`;
+  if(s==='monitoring')  return`<span class="badge-impact badge-status-mon">● MONITORING</span>`;
   return`<span class="badge-impact badge-status-res">✓ RESOLVED</span>`;
 }
 function hoursDiff(a,b){
@@ -442,17 +444,22 @@ function attachSortToTable(tableId){
 }
 
 // ============================================================
-// DATA — 50 incidents from snowflake_incidents-08-20-2026-103119.xlsx
-// NEW: INC20000168 (identified/major, Azure East US 2 Virginia, Security & Privacy, Aug 20 2026)
+// DATA — 50 incidents from snowflake_incidents-08-20-2026-105131.xlsx
+// KEY CHANGE: INC20000168 identified→monitoring
+//   - incident_end_time: 14:10 UTC Aug 20 → 09:10 CDT (now populated)
+//   - total_updates: 2 → 3
+//   - duration: 14:10 − 13:25 = 0.75 hrs (now calculable)
+//   - resolution: still N/A (no resolved timestamp)
+//   - root cause now known: 3rd-party CSP virtual networking infrastructure issue
 // ============================================================
 const incidents=[
-  // ── NEW ACTIVE IDENTIFIED INCIDENT ──────────────────────
-  {name:"INC20000168",id:"n54hrszdq7h7",status:"identified",impact:"major",flag:"identified",
-   startISO:"2026-08-20T13:25:00Z",endISO:"",resolvedISO:"",updatedISO:"2026-08-20T14:19:22Z",
-   updates:2,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+  // ── MONITORING (active) ──────────────────────────────────
+  {name:"INC20000168",id:"n54hrszdq7h7",status:"monitoring",impact:"major",flag:"monitoring",
+   startISO:"2026-08-20T13:25:00Z",endISO:"2026-08-20T14:10:00Z",resolvedISO:"",updatedISO:"2026-08-20T14:39:33Z",
+   updates:3,platform:"Azure",region:"Azure - East US 2 (Virginia)",
    component:"Azure - East US 2 (Virginia) - Security and Privacy Features",
    oldStatus:"partial_outage",newStatus:"partial_outage",
-   updateBody:"IDENTIFIED: Investigating issue with Snowflake Data Cloud. CSP engaged. Customers in specified regions may have been unable to connect via PrivateLink / private connectivity. ETA not yet available. Next update within 30 minutes."},
+   updateBody:"MONITORING: CSP has implemented mitigation for virtual networking infrastructure issue. Customers may have been unable to connect via PrivateLink. Other connection methods unaffected. Impact: 08:25–09:10 CDT. Root cause: 3rd-party CSP virtual networking infrastructure issue. Monitoring until fully confident services are functioning properly."},
 
   // ── EXISTING INCIDENTS ───────────────────────────────────
   {name:"INC20000163",id:"yk5sqhcjp266",status:"resolved",impact:"major",flag:"",
@@ -812,8 +819,8 @@ function buildUsEastRows(){
     .filter(i=>kw.some(k=>i.region.toLowerCase().includes(k)||i.component.toLowerCase().includes(k)))
     .map((i,idx)=>{
       const tr=document.createElement('tr');
-      if(i.flag==='identified')tr.classList.add('row-identified');
-      const pfx=i.flag==='identified'?'⚠️ ':'';
+      if(i.flag==='monitoring')tr.classList.add('row-monitoring');
+      const pfx=i.flag==='monitoring'?'🔶 ':'';
       tr.innerHTML=`
         <td data-raw="${idx+1}">${idx+1}</td>
         <td style="font-weight:600;font-size:0.68rem;min-width:170px">${pfx}<span>${i.name}</span></td>
@@ -837,8 +844,8 @@ function buildUsEastRows(){
 function buildAllRows(){
   return incidents.map((i,idx)=>{
     const tr=document.createElement('tr');
-    if(i.flag==='identified')tr.classList.add('row-identified');
-    const pfx=i.flag==='identified'?'⚠️ ':'';
+    if(i.flag==='monitoring')tr.classList.add('row-monitoring');
+    const pfx=i.flag==='monitoring'?'🔶 ':'';
     tr.innerHTML=`
       <td data-raw="${idx+1}">${idx+1}</td>
       <td style="font-weight:600;font-size:0.67rem;min-width:160px">${pfx}<span>${i.name}</span></td>
@@ -898,12 +905,12 @@ attachSortToTable('allTable');
 (function(){
   const pm =incidents.filter(i=>i.status==='postmortem').length;
   const res=incidents.filter(i=>i.status==='resolved').length;
-  const idf=incidents.filter(i=>i.status==='identified').length;
+  const mon=incidents.filter(i=>i.status==='monitoring').length;
   new Chart(document.getElementById('chartStatus'),{
     type:'doughnut',
-    data:{labels:['Postmortem','Resolved','Identified'],
-      datasets:[{data:[pm,res,idf],
-        backgroundColor:['#29b5e8','#27ae60','#d68910'],borderWidth:2,borderColor:'#fff'}]},
+    data:{labels:['Postmortem','Resolved','Monitoring'],
+      datasets:[{data:[pm,res,mon],
+        backgroundColor:['#29b5e8','#27ae60','#e67e22'],borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}
   });
@@ -1043,20 +1050,33 @@ attachSortToTable('allTable');
 })();
 
 (function(){
+  // Include INC20000168 for duration bar (0.75 hrs), exclude from resolution
   const data=incidents
     .filter(i=>i.resolution!==null&&i.resolution<500)
     .sort((a,b)=>b.resolution-a.resolution)
     .slice(0,20);
-  const shortNames=data.map(i=>{const m=i.name.match(/(INC\S+)$/);return m?m[1]:i.name.substring(0,18);});
+
+  const mon168=incidents.find(i=>i.name==='INC20000168');
+  const alreadyIn=data.find(i=>i.name==='INC20000168');
+  const chartData=alreadyIn?data:[mon168,...data].slice(0,20);
+
+  const shortNames=chartData.map(i=>{const m=i.name.match(/(INC\S+)$/);return m?m[1]:i.name.substring(0,18);});
   new Chart(document.getElementById('chartDuration'),{
     type:'bar',
     data:{labels:shortNames,datasets:[
-      {label:'Duration (end−start)',       data:data.map(i=>i.duration!==null?+i.duration.toFixed(2):0),  backgroundColor:'#29b5e8',borderRadius:3},
-      {label:'Resolution (resolved−start)',data:data.map(i=>i.resolution!==null?+i.resolution.toFixed(2):0),backgroundColor:'#0a4d7c',borderRadius:3}
+      {label:'Duration (end−start)',       data:chartData.map(i=>i.duration!==null?+i.duration.toFixed(2):0),  backgroundColor:'#29b5e8',borderRadius:3},
+      {label:'Resolution (resolved−start)',data:chartData.map(i=>i.resolution!==null?+i.resolution.toFixed(2):0),backgroundColor:'#0a4d7c',borderRadius:3}
     ]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:12}},
-        tooltip:{callbacks:{title:(t)=>data[t[0].dataIndex].name,label:(t)=>`${t.dataset.label}: ${t.raw} hrs`}}},
+        tooltip:{callbacks:{
+          title:(t)=>chartData[t[0].dataIndex].name,
+          label:(t)=>{
+            if(t.dataset.label.includes('Resolution')&&chartData[t[0].dataIndex].resolution===null)
+              return'Resolution: N/A (monitoring — pending)';
+            return`${t.dataset.label}: ${t.raw} hrs`;
+          }
+        }}},
       scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'#eef3f8'},
                  title:{display:true,text:'Hours',font:{size:10}}},
               y:{ticks:{font:{size:9}},grid:{display:false}}}}
