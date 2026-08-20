@@ -10,7 +10,7 @@
     --sf-blue:#29b5e8; --sf-dark:#0a4d7c; --sf-light:#e8f6fd; --sf-accent:#1a8fc1;
     --sf-gray:#f4f7fb; --sf-border:#d0e8f5; --sf-text:#1a2e3b; --sf-muted:#5a7a8a;
     --critical:#e63946; --major:#f4a261; --minor:#2a9d8f;
-    --resolved-green:#27ae60; --postmortem:#29b5e8;
+    --identified:#d68910; --resolved-green:#27ae60; --postmortem:#29b5e8;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Segoe UI',Arial,sans-serif;background:var(--sf-gray);color:var(--sf-text);font-size:13px;}
@@ -23,24 +23,32 @@
   header .badge{margin-left:auto;background:rgba(41,181,232,0.2);border:1px solid var(--sf-blue);
     color:var(--sf-blue);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;}
 
-  .clear-banner{background:linear-gradient(90deg,#1a5c2a,#27ae60);color:white;
-    padding:10px 28px;display:flex;align-items:center;gap:12px;font-size:0.82rem;}
-  .clear-banner .clr-ts{margin-left:auto;opacity:0.85;font-size:0.75rem;white-space:nowrap;}
+  /* ACTIVE INCIDENT BANNER */
+  .active-banner{background:linear-gradient(90deg,#6d4c00,var(--identified));color:white;
+    padding:12px 28px;display:flex;align-items:center;gap:12px;font-size:0.82rem;}
+  .active-dot{width:10px;height:10px;border-radius:50%;background:#ffe27a;
+    animation:pulse-active 1.5s infinite;flex-shrink:0;}
+  @keyframes pulse-active{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(1.4);}}
+  .active-banner strong{font-size:0.88rem;}
+  .active-banner .act-ts{margin-left:auto;opacity:0.85;font-size:0.75rem;white-space:nowrap;}
 
-  /* Recently resolved card */
-  .resolved-card{background:white;border-radius:10px;padding:16px 18px;
-    border-left:5px solid var(--major);box-shadow:0 2px 10px rgba(244,162,97,0.14);margin-bottom:6px;}
-  .rc-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
-  .rc-name{font-size:0.95rem;font-weight:700;color:var(--sf-dark);}
-  .rc-meta{font-size:0.72rem;color:var(--sf-muted);}
-  .rc-body{font-size:0.75rem;color:#334;line-height:1.55;background:#fef9f0;
-    border-radius:6px;padding:9px 12px;border:1px solid #fad7a0;margin-bottom:8px;}
-  .rc-metrics{display:flex;gap:12px;flex-wrap:wrap;}
-  .rc-metric{background:#fef9f0;border:1px solid #fad7a0;border-radius:7px;
+  /* Active identified card */
+  .identified-card{background:white;border-radius:10px;padding:18px 20px;
+    border-left:5px solid var(--identified);box-shadow:0 2px 12px rgba(214,137,16,0.20);margin-bottom:6px;}
+  .ic-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+  .ic-name{font-size:1rem;font-weight:700;color:var(--sf-dark);}
+  .ic-meta{font-size:0.75rem;color:var(--sf-muted);}
+  .ic-body{font-size:0.78rem;color:#334;line-height:1.6;background:#fffbf0;
+    border-radius:6px;padding:10px 14px;border:1px solid #f5d87a;margin-bottom:8px;}
+  .ic-metrics{display:flex;gap:14px;flex-wrap:wrap;}
+  .ic-metric{background:#fffbf0;border:1px solid #f5d87a;border-radius:8px;
     padding:6px 12px;font-size:0.72rem;text-align:center;}
-  .rc-metric-val{font-size:1rem;font-weight:700;color:#c57a1a;}
-  .rc-metric-lbl{font-size:0.62rem;color:var(--sf-muted);text-transform:uppercase;margin-top:1px;}
-  .rc-components{font-size:0.68rem;color:var(--sf-muted);margin-top:6px;}
+  .ic-metric-val{font-size:1rem;font-weight:700;color:var(--identified);}
+  .ic-metric-lbl{font-size:0.62rem;color:var(--sf-muted);text-transform:uppercase;margin-top:1px;}
+  .ic-components{font-size:0.68rem;color:var(--sf-muted);margin-top:8px;}
+
+  .badge-status-identified{background:#fff3cc;color:#7d5a00;animation:pulse-badge-id 2s infinite;}
+  @keyframes pulse-badge-id{0%,100%{opacity:1;}50%{opacity:0.65;};}
 
   .dashboard{padding:24px 28px;max-width:1600px;margin:0 auto;}
   .section-title{font-size:0.95rem;font-weight:700;color:var(--sf-dark);text-transform:uppercase;
@@ -48,22 +56,24 @@
     display:flex;align-items:center;gap:8px;}
   .section-title::before{content:'';display:inline-block;width:4px;height:16px;background:var(--sf-blue);border-radius:2px;}
 
-  .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:10px;}
-  .kpi-card{background:white;border-radius:10px;padding:18px 14px 14px;text-align:center;
+  .kpi-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:10px;}
+  .kpi-card{background:white;border-radius:10px;padding:16px 12px 12px;text-align:center;
     box-shadow:0 2px 8px rgba(10,77,124,0.08);border-top:4px solid var(--sf-blue);transition:transform 0.15s;}
   .kpi-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(10,77,124,0.14);}
   .kpi-card.critical{border-top-color:var(--critical);}
   .kpi-card.major-kpi{border-top-color:var(--major);}
   .kpi-card.minor-kpi{border-top-color:var(--minor);}
+  .kpi-card.identified-kpi{border-top-color:var(--identified);}
   .kpi-card.resolved-kpi{border-top-color:var(--resolved-green);}
   .kpi-card.postmortem-card{border-top-color:var(--postmortem);}
-  .kpi-number{font-size:2.4rem;font-weight:800;color:var(--sf-dark);line-height:1;}
+  .kpi-number{font-size:2.1rem;font-weight:800;color:var(--sf-dark);line-height:1;}
   .kpi-card.critical .kpi-number{color:var(--critical);}
   .kpi-card.major-kpi .kpi-number{color:var(--major);}
   .kpi-card.minor-kpi .kpi-number{color:var(--minor);}
+  .kpi-card.identified-kpi .kpi-number{color:var(--identified);}
   .kpi-card.resolved-kpi .kpi-number{color:var(--resolved-green);}
-  .kpi-label{font-size:0.72rem;color:var(--sf-muted);text-transform:uppercase;font-weight:600;margin-top:5px;letter-spacing:0.5px;}
-  .kpi-sub{font-size:0.68rem;color:var(--sf-muted);margin-top:2px;}
+  .kpi-label{font-size:0.7rem;color:var(--sf-muted);text-transform:uppercase;font-weight:600;margin-top:5px;letter-spacing:0.5px;}
+  .kpi-sub{font-size:0.65rem;color:var(--sf-muted);margin-top:2px;}
 
   .metric-legend{display:flex;gap:20px;flex-wrap:wrap;background:white;border-radius:10px;
     padding:14px 18px;box-shadow:0 2px 8px rgba(10,77,124,0.07);border:1px solid var(--sf-border);
@@ -106,8 +116,8 @@
   tr:hover td{background:var(--sf-light);}
   tr:nth-child(even) td{background:#fafcfe;}
   tr:nth-child(even):hover td{background:var(--sf-light);}
-  tr.row-recently-resolved td{background:#fff8f0 !important;}
-  tr.row-recently-resolved:hover td{background:#fef0dc !important;}
+  tr.row-identified td{background:#fffbf0 !important;}
+  tr.row-identified:hover td{background:#fff3cc !important;}
 
   .badge-impact{display:inline-block;padding:2px 8px;border-radius:10px;
     font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
@@ -138,7 +148,7 @@
   footer{text-align:center;padding:18px;font-size:0.72rem;color:var(--sf-muted);
     border-top:1px solid var(--sf-border);margin-top:32px;background:white;}
 
-  @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.chart-grid-4{grid-template-columns:1fr 1fr;}}
+  @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(4,1fr);}.chart-grid-4{grid-template-columns:1fr 1fr;}}
   @media(max-width:800px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.chart-grid-2,.chart-grid-4{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -148,50 +158,50 @@
   <div class="logo">❄</div>
   <div class="title-block">
     <h1>Snowflake Incident Intelligence Dashboard</h1>
-    <p>Service Incident Report &nbsp;|&nbsp; All timestamps in US Central Daylight Time (CDT = UTC−5) &nbsp;|&nbsp; Data as of August 19, 2026</p>
+    <p>Service Incident Report &nbsp;|&nbsp; All timestamps in US Central Daylight Time (CDT = UTC−5) &nbsp;|&nbsp; Data as of August 20, 2026</p>
   </div>
-  <div class="badge">52 Incidents</div>
+  <div class="badge">50 Incidents</div>
 </header>
 
-<div class="clear-banner">
-  <span style="font-size:1.1rem">✅</span>
+<!-- ACTIVE INCIDENT BANNER -->
+<div class="active-banner">
+  <div class="active-dot"></div>
   <div>
-    <strong>ALL SYSTEMS OPERATIONAL</strong> &nbsp;|&nbsp;
-    No active incidents &nbsp;|&nbsp;
-    Most recent: INC20000163 resolved Aug 18 2026 09:51 CDT (Major — AWS US East N. Virginia — Cortex Code AI/ML failures) &nbsp;|&nbsp; RCA pending
+    <strong>⚠️ ACTIVE — INC20000168 (IDENTIFIED / MAJOR)</strong> &nbsp;|&nbsp;
+    Azure - East US 2 (Virginia) — PrivateLink / private connectivity disruption &nbsp;|&nbsp;
+    Investigating; CSP engaged &nbsp;|&nbsp;
+    Start: 08:25 CDT Aug 20 &nbsp;|&nbsp; ETA not yet available &nbsp;|&nbsp; Next update within 30 min
   </div>
-  <div class="clr-ts">Data as of Aug 19 2026</div>
+  <div class="act-ts">Updated: Aug 20 2026 09:19 CDT</div>
 </div>
 
 <div class="dashboard">
 
-  <!-- Recently Resolved -->
-  <div class="section-title">✅ Most Recently Resolved Incident</div>
-  <div class="resolved-card">
-    <div class="rc-header">
-      <span class="badge-impact badge-status-res">✓ RESOLVED</span>
+  <!-- Active Identified Incident -->
+  <div class="section-title">⚠️ Active Incident — Under Investigation</div>
+  <div class="identified-card">
+    <div class="ic-header">
+      <span class="badge-impact badge-status-identified">⚠ IDENTIFIED</span>
       <span class="badge-impact badge-major">MAJOR</span>
-      <span class="rc-name">INC20000163</span>
-      <span style="font-family:monospace;font-size:0.68rem;color:var(--sf-muted)">ID: yk5sqhcjp266</span>
-      <span class="rc-meta">Resolved: Aug 18 2026 09:51 CDT &nbsp;|&nbsp; 4 updates &nbsp;|&nbsp; RCA pending (within 5 business days)</span>
+      <span class="ic-name">INC20000168</span>
+      <span style="font-family:monospace;font-size:0.7rem;color:var(--sf-muted)">ID: n54hrszdq7h7</span>
+      <span class="ic-meta">Created: Aug 20 2026 08:47 CDT &nbsp;|&nbsp; 2 updates &nbsp;|&nbsp; Not yet resolved</span>
     </div>
-    <div class="rc-body">
-      <strong>Final status:</strong> Fix implemented and environment monitored to confirm service restoration.<br><br>
-      <strong>Customer experience:</strong> Customers in AWS US East (N. Virginia) may have experienced issues with AI and ML functionality. When using Cortex Code in Snowsight, customers may have seen "Internal Server error: You may need to start a new chat." All other Snowflake features were not impacted.<br><br>
-      <strong>Incident window:</strong> Start 11:20 UTC (06:20 CDT) → End 13:45 UTC (08:45 CDT) August 18, 2026<br><br>
-      <strong>Preliminary root cause:</strong> Resource exhaustion in the compute infrastructure caused container scheduling failures, resulting in AI and ML functionality becoming unavailable.
+    <div class="ic-body">
+      <strong>Current status:</strong> Investigating an issue with Snowflake Data Cloud. CSP engaged to investigate and troubleshoot further. Next update within 30 minutes.<br><br>
+      <strong>Customer experience:</strong> Customers hosted in the specified regions may have been unable to connect to Snowflake via private connectivity solutions, such as PrivateLink.<br><br>
+      <strong>ETA:</strong> An ETA is not yet available. We'll provide one as soon as possible.<br><br>
+      <strong>Incident start time:</strong> 13:25 UTC (08:25 CDT) August 20, 2026
     </div>
-    <div class="rc-metrics">
-      <div class="rc-metric"><div class="rc-metric-val">2.42 hrs</div><div class="rc-metric-lbl">Duration (end−start)</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">3.52 hrs</div><div class="rc-metric-lbl">Resolution (resolved−start)</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">4</div><div class="rc-metric-lbl">Total Updates</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">AWS</div><div class="rc-metric-lbl">Platform</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">US East (N. Virginia)</div><div class="rc-metric-lbl">Region</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">06:20 CDT</div><div class="rc-metric-lbl">Start (Aug 18)</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">09:51 CDT</div><div class="rc-metric-lbl">Resolved (Aug 18)</div></div>
+    <div class="ic-metrics">
+      <div class="ic-metric"><div class="ic-metric-val">N/A</div><div class="ic-metric-lbl">Duration (ongoing)</div></div>
+      <div class="ic-metric"><div class="ic-metric-val">N/A</div><div class="ic-metric-lbl">Resolution (pending)</div></div>
+      <div class="ic-metric"><div class="ic-metric-val">2</div><div class="ic-metric-lbl">Total Updates</div></div>
+      <div class="ic-metric"><div class="ic-metric-val">Azure</div><div class="ic-metric-lbl">Platform</div></div>
+      <div class="ic-metric"><div class="ic-metric-val">East US 2 (Virginia)</div><div class="ic-metric-lbl">Region</div></div>
     </div>
-    <div class="rc-components">
-      <strong>Affected:</strong> AWS - US East (N. Virginia) - AI and ML (partial_outage → <strong style="color:#1a7a3a">operational</strong>)
+    <div class="ic-components">
+      <strong>Affected:</strong> Azure - East US 2 (Virginia) - Security and Privacy Features (partial_outage → partial_outage — investigating)
     </div>
   </div>
 
@@ -199,24 +209,29 @@
   <div class="section-title">Key Performance Indicators</div>
   <div class="kpi-grid">
     <div class="kpi-card">
-      <div class="kpi-number">52</div>
+      <div class="kpi-number">50</div>
       <div class="kpi-label">Total Incidents</div>
       <div class="kpi-sub">Aug 2025 – Aug 2026</div>
     </div>
     <div class="kpi-card critical">
-      <div class="kpi-number">20</div>
+      <div class="kpi-number">19</div>
       <div class="kpi-label">Critical</div>
       <div class="kpi-sub">38% of total</div>
     </div>
     <div class="kpi-card major-kpi">
-      <div class="kpi-number">18</div>
+      <div class="kpi-number">19</div>
       <div class="kpi-label">Major</div>
-      <div class="kpi-sub">35% of total</div>
+      <div class="kpi-sub">38% of total</div>
     </div>
     <div class="kpi-card minor-kpi">
-      <div class="kpi-number">12</div>
+      <div class="kpi-number">10</div>
       <div class="kpi-label">Minor</div>
-      <div class="kpi-sub">23% of total</div>
+      <div class="kpi-sub">20% of total</div>
+    </div>
+    <div class="kpi-card identified-kpi">
+      <div class="kpi-number">1</div>
+      <div class="kpi-label">Identified</div>
+      <div class="kpi-sub">Active now ⚠</div>
     </div>
     <div class="kpi-card resolved-kpi">
       <div class="kpi-number">5</div>
@@ -224,7 +239,7 @@
       <div class="kpi-sub">10% of total</div>
     </div>
     <div class="kpi-card postmortem-card">
-      <div class="kpi-number">48</div>
+      <div class="kpi-number">46</div>
       <div class="kpi-label">Postmortem</div>
       <div class="kpi-sub">90% of closed</div>
     </div>
@@ -276,8 +291,8 @@
       <div><strong>Resolution (hrs)</strong> = <code>incident_resolved − incident_start_time</code> — full MTTR lifecycle</div>
     </div>
     <div class="metric-legend-item">
-      <div class="metric-dot" style="background:#f4a261"></div>
-      <div><strong>INC20000163</strong> now fully included — Duration 2.42 hrs &amp; Resolution 3.52 hrs &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</div>
+      <div class="metric-dot" style="background:#d68910"></div>
+      <div><strong>INC20000168</strong> excluded from time charts (no end/resolved time yet) &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</div>
     </div>
   </div>
   <div class="chart-grid-2" style="margin-top:14px;">
@@ -287,7 +302,7 @@
     </div>
     <div class="chart-card">
       <h3>⏱ Duration vs Resolution (Hours) — Top 20 by Resolution</h3>
-      <p class="chart-subtitle">Blue = Duration (end−start) &nbsp;|&nbsp; Dark = Resolution (resolved−start) &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</p>
+      <p class="chart-subtitle">Blue = Duration (end−start) &nbsp;|&nbsp; Dark = Resolution (resolved−start) &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 &amp; INC20000168 excluded</p>
       <div class="chart-container xtall"><canvas id="chartDuration"></canvas></div>
     </div>
   </div>
@@ -324,8 +339,8 @@
   <!-- All Incidents Table -->
   <div class="section-title">Complete Incident Summary</div>
   <div class="table-card">
-    <h3>All 52 Incidents — One Row Per Incident — Latest Update — All Times CDT (UTC−5)</h3>
-    <p class="table-subtitle">Duration = end_time − start_time (service impact window) &nbsp;|&nbsp; Resolution = incident_resolved − start_time (full MTTR lifecycle) &nbsp;|&nbsp; 🟢 = recently resolved (Aug 18)</p>
+    <h3>All 50 Incidents — One Row Per Incident — Latest Update — All Times CDT (UTC−5)</h3>
+    <p class="table-subtitle">Duration = end_time − start_time &nbsp;|&nbsp; Resolution = incident_resolved − start_time &nbsp;|&nbsp; ⚠️ = identified (active)</p>
     <p class="sort-hint">💡 Click any column header to sort — click again to reverse</p>
     <div class="table-scroll">
       <table id="allTable">
@@ -356,19 +371,20 @@
 </div>
 
 <footer>
-  Snowflake Incident Intelligence Dashboard &nbsp;|&nbsp; Source: snowflake_incidents-08-19-2026-093243.xlsx &nbsp;|&nbsp; Generated August 19, 2026 &nbsp;|&nbsp; All times CDT (UTC−5)
+  Snowflake Incident Intelligence Dashboard &nbsp;|&nbsp; Source: snowflake_incidents-08-20-2026-103119.xlsx &nbsp;|&nbsp; Generated August 20, 2026 &nbsp;|&nbsp; All times CDT (UTC−5)
   <br>Duration = incident_end_time − incident_start_time &nbsp;|&nbsp; Resolution = incident_resolved − incident_start_time
 </footer>
 
 <script>
-const IMPACT_ORDER={critical:0,major:1,minor:2,none:3};
+const IMPACT_ORDER={critical:0,major:1,minor:2,none:3,identified:4};
 
 function impactBadge(impact){
   const cls={critical:'badge-critical',major:'badge-major',minor:'badge-minor',none:'badge-none'};
   return`<span class="badge-impact ${cls[impact]||'badge-none'}">${impact.toUpperCase()}</span>`;
 }
 function statusBadge(s){
-  if(s==='postmortem') return`<span class="badge-impact badge-status-pm">POSTMORTEM</span>`;
+  if(s==='postmortem')   return`<span class="badge-impact badge-status-pm">POSTMORTEM</span>`;
+  if(s==='identified')   return`<span class="badge-impact badge-status-identified">⚠ IDENTIFIED</span>`;
   return`<span class="badge-impact badge-status-res">✓ RESOLVED</span>`;
 }
 function hoursDiff(a,b){
@@ -426,16 +442,20 @@ function attachSortToTable(tableId){
 }
 
 // ============================================================
-// DATA — 52 incidents from snowflake_incidents-08-19-2026-093243.xlsx
-// KEY CHANGE: INC20000163 monitoring → resolved
-//   - incident_resolved: 2026-08-18T14:51:45Z (09:51 CDT Aug 18)
-//   - component_new_status: partial_outage → operational
-//   - total_updates: 3 → 4
-//   - resolution: 14:51 − 11:20 = 3.52 hrs (now calculable)
+// DATA — 50 incidents from snowflake_incidents-08-20-2026-103119.xlsx
+// NEW: INC20000168 (identified/major, Azure East US 2 Virginia, Security & Privacy, Aug 20 2026)
 // ============================================================
 const incidents=[
-  // ── INC20000163: now RESOLVED (was monitoring) ──────────
-  {name:"INC20000163",id:"yk5sqhcjp266",status:"resolved",impact:"major",flag:"recent",
+  // ── NEW ACTIVE IDENTIFIED INCIDENT ──────────────────────
+  {name:"INC20000168",id:"n54hrszdq7h7",status:"identified",impact:"major",flag:"identified",
+   startISO:"2026-08-20T13:25:00Z",endISO:"",resolvedISO:"",updatedISO:"2026-08-20T14:19:22Z",
+   updates:2,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Security and Privacy Features",
+   oldStatus:"partial_outage",newStatus:"partial_outage",
+   updateBody:"IDENTIFIED: Investigating issue with Snowflake Data Cloud. CSP engaged. Customers in specified regions may have been unable to connect via PrivateLink / private connectivity. ETA not yet available. Next update within 30 minutes."},
+
+  // ── EXISTING INCIDENTS ───────────────────────────────────
+  {name:"INC20000163",id:"yk5sqhcjp266",status:"resolved",impact:"major",flag:"",
    startISO:"2026-08-18T11:20:00Z",endISO:"2026-08-18T13:45:00Z",resolvedISO:"2026-08-18T14:51:45Z",updatedISO:"2026-08-18T14:51:45Z",
    updates:4,platform:"AWS",region:"AWS - US East (N. Virginia)",
    component:"AWS - US East (N. Virginia) - AI and ML",
@@ -776,14 +796,7 @@ const incidents=[
    updates:4,platform:"Global",region:"Global — 46 regions",
    component:"Applications (46 regions across all platforms)",
    oldStatus:"operational (all)",newStatus:"operational (all)",
-   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0144343"},
-
-  {name:"INC0144309",id:"672tf82761p8",status:"postmortem",impact:"major",flag:"",
-   startISO:"2025-10-02T18:05:00Z",endISO:"2025-10-02T21:28:00Z",resolvedISO:"2025-10-02T22:14:38Z",updatedISO:"2025-10-09T20:48:25Z",
-   updates:9,platform:"AWS",region:"Multi-region (AWS/GCP) — AI and ML",
-   component:"AI and ML (12 regions: AWS/GCP)",
-   oldStatus:"operational (all)",newStatus:"operational (all)",
-   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0144309"}
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0144343"}
 ];
 
 incidents.forEach(i=>{
@@ -799,8 +812,8 @@ function buildUsEastRows(){
     .filter(i=>kw.some(k=>i.region.toLowerCase().includes(k)||i.component.toLowerCase().includes(k)))
     .map((i,idx)=>{
       const tr=document.createElement('tr');
-      if(i.flag==='recent')tr.classList.add('row-recently-resolved');
-      const pfx=i.flag==='recent'?'🟢 ':'';
+      if(i.flag==='identified')tr.classList.add('row-identified');
+      const pfx=i.flag==='identified'?'⚠️ ':'';
       tr.innerHTML=`
         <td data-raw="${idx+1}">${idx+1}</td>
         <td style="font-weight:600;font-size:0.68rem;min-width:170px">${pfx}<span>${i.name}</span></td>
@@ -824,8 +837,8 @@ function buildUsEastRows(){
 function buildAllRows(){
   return incidents.map((i,idx)=>{
     const tr=document.createElement('tr');
-    if(i.flag==='recent')tr.classList.add('row-recently-resolved');
-    const pfx=i.flag==='recent'?'🟢 ':'';
+    if(i.flag==='identified')tr.classList.add('row-identified');
+    const pfx=i.flag==='identified'?'⚠️ ':'';
     tr.innerHTML=`
       <td data-raw="${idx+1}">${idx+1}</td>
       <td style="font-weight:600;font-size:0.67rem;min-width:160px">${pfx}<span>${i.name}</span></td>
@@ -883,12 +896,14 @@ attachSortToTable('allTable');
 })();
 
 (function(){
-  const pm=incidents.filter(i=>i.status==='postmortem').length;
+  const pm =incidents.filter(i=>i.status==='postmortem').length;
   const res=incidents.filter(i=>i.status==='resolved').length;
+  const idf=incidents.filter(i=>i.status==='identified').length;
   new Chart(document.getElementById('chartStatus'),{
     type:'doughnut',
-    data:{labels:['Postmortem','Resolved'],
-      datasets:[{data:[pm,res],backgroundColor:['#29b5e8','#27ae60'],borderWidth:2,borderColor:'#fff'}]},
+    data:{labels:['Postmortem','Resolved','Identified'],
+      datasets:[{data:[pm,res,idf],
+        backgroundColor:['#29b5e8','#27ae60','#d68910'],borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}
   });
