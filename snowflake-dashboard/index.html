@@ -27,7 +27,6 @@
     padding:10px 28px;display:flex;align-items:center;gap:12px;font-size:0.82rem;}
   .clear-banner .clr-ts{margin-left:auto;opacity:0.85;font-size:0.75rem;white-space:nowrap;}
 
-  /* Recently resolved card */
   .resolved-card{background:white;border-radius:10px;padding:16px 18px;
     border-left:5px solid var(--major);box-shadow:0 2px 10px rgba(244,162,97,0.14);margin-bottom:6px;}
   .rc-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
@@ -48,22 +47,25 @@
     display:flex;align-items:center;gap:8px;}
   .section-title::before{content:'';display:inline-block;width:4px;height:16px;background:var(--sf-blue);border-radius:2px;}
 
-  .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:10px;}
-  .kpi-card{background:white;border-radius:10px;padding:18px 14px 14px;text-align:center;
+  /* KPI — 7 columns to include None */
+  .kpi-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:10px;}
+  .kpi-card{background:white;border-radius:10px;padding:16px 12px 12px;text-align:center;
     box-shadow:0 2px 8px rgba(10,77,124,0.08);border-top:4px solid var(--sf-blue);transition:transform 0.15s;}
   .kpi-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(10,77,124,0.14);}
   .kpi-card.critical{border-top-color:var(--critical);}
   .kpi-card.major-kpi{border-top-color:var(--major);}
   .kpi-card.minor-kpi{border-top-color:var(--minor);}
+  .kpi-card.none-kpi{border-top-color:#adb5bd;}
   .kpi-card.resolved-kpi{border-top-color:var(--resolved-green);}
   .kpi-card.postmortem-card{border-top-color:var(--postmortem);}
-  .kpi-number{font-size:2.4rem;font-weight:800;color:var(--sf-dark);line-height:1;}
+  .kpi-number{font-size:2rem;font-weight:800;color:var(--sf-dark);line-height:1;}
   .kpi-card.critical .kpi-number{color:var(--critical);}
   .kpi-card.major-kpi .kpi-number{color:var(--major);}
   .kpi-card.minor-kpi .kpi-number{color:var(--minor);}
+  .kpi-card.none-kpi .kpi-number{color:#6c757d;}
   .kpi-card.resolved-kpi .kpi-number{color:var(--resolved-green);}
-  .kpi-label{font-size:0.72rem;color:var(--sf-muted);text-transform:uppercase;font-weight:600;margin-top:5px;letter-spacing:0.5px;}
-  .kpi-sub{font-size:0.68rem;color:var(--sf-muted);margin-top:2px;}
+  .kpi-label{font-size:0.68rem;color:var(--sf-muted);text-transform:uppercase;font-weight:600;margin-top:5px;letter-spacing:0.5px;}
+  .kpi-sub{font-size:0.63rem;color:var(--sf-muted);margin-top:2px;}
 
   .metric-legend{display:flex;gap:20px;flex-wrap:wrap;background:white;border-radius:10px;
     padding:14px 18px;box-shadow:0 2px 8px rgba(10,77,124,0.07);border:1px solid var(--sf-border);
@@ -102,6 +104,14 @@
   th.sort-desc::after{content:'▼';opacity:1;color:var(--sf-blue);}
   th.sort-asc,th.sort-desc{background:#0d5f99;}
   th .th-sub{font-size:0.6rem;font-weight:400;opacity:0.75;display:block;margin-top:1px;}
+  /* FIX: Latest Update header — wrap text, don't overflow */
+  th.latest-update-col{
+    white-space:normal !important;
+    min-width:200px;
+    max-width:380px;
+    word-break:break-word;
+    line-height:1.3;
+  }
   td{padding:7px 10px;border-bottom:1px solid #eef3f8;vertical-align:top;line-height:1.5;}
   tr:hover td{background:var(--sf-light);}
   tr:nth-child(even) td{background:#fafcfe;}
@@ -124,16 +134,25 @@
   .dur-low{color:var(--minor);}
   .dur-na{color:#adb5bd;font-style:italic;}
 
-  .update-body-wide{min-width:360px;max-width:520px;font-size:0.72rem;color:#334;line-height:1.55;white-space:normal;word-break:break-word;}
-  .update-body{max-width:280px;font-size:0.67rem;color:#445;line-height:1.5;}
+  /* FIX: Latest Update td cells — wrap correctly */
+  .update-body-wide{
+    min-width:200px;
+    max-width:400px;
+    font-size:0.72rem;
+    color:#334;
+    line-height:1.55;
+    white-space:normal;
+    word-break:break-word;
+  }
+  .update-body{max-width:280px;font-size:0.67rem;color:#445;line-height:1.5;white-space:normal;word-break:break-word;}
   .component-cell{max-width:200px;font-size:0.67rem;color:#445;}
-  .region-cell{max-width:180px;font-size:0.67rem;color:#445;}
+  .region-cell{max-width:160px;font-size:0.67rem;color:#445;white-space:normal;word-break:break-word;}
   .ts{white-space:nowrap;font-size:0.67rem;color:#445;}
 
   footer{text-align:center;padding:18px;font-size:0.72rem;color:var(--sf-muted);
     border-top:1px solid var(--sf-border);margin-top:32px;background:white;}
 
-  @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.chart-grid-4{grid-template-columns:1fr 1fr;}}
+  @media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(4,1fr);}.chart-grid-4{grid-template-columns:1fr 1fr;}}
   @media(max-width:800px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.chart-grid-2,.chart-grid-4{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -153,7 +172,7 @@
   <div>
     <strong>ALL SYSTEMS OPERATIONAL</strong> &nbsp;|&nbsp;
     No active incidents &nbsp;|&nbsp;
-    Most recent: INC20000168 resolved Aug 20 2026 10:43 CDT (Major — Azure East US 2 Virginia — PrivateLink / private connectivity — 3rd-party CSP networking issue) &nbsp;|&nbsp; RCA within 10 business days
+    Most recent: INC20000168 resolved Aug 20 2026 10:43 CDT (Major — Azure East US 2 Virginia — PrivateLink / private connectivity) &nbsp;|&nbsp; RCA within 10 business days
   </div>
   <div class="clr-ts">Data as of Aug 20 2026</div>
 </div>
@@ -174,28 +193,26 @@
       <strong>Final status:</strong> Third-party cloud platform confirmed mitigation complete; automated recovery system initiated. Snowflake independently monitored environment and verified service restored.<br><br>
       <strong>Customer experience:</strong> Customers in the specified regions may have been unable to connect to Snowflake via private connectivity solutions, such as PrivateLink. Other connection methods were unaffected.<br><br>
       <strong>Incident window:</strong> Start 13:25 UTC (08:25 CDT) → End 14:10 UTC (09:10 CDT) August 20, 2026<br><br>
-      <strong>Preliminary root cause:</strong> A third-party cloud platform experienced a virtual networking infrastructure issue preventing PrivateLink connectivity. Snowflake suspects this may be a recurrence of a prior 3rd-party cloud platform virtual networking problem; remains closely engaged with CSP for their root cause investigation.
+      <strong>Preliminary root cause:</strong> A third-party cloud platform experienced a virtual networking infrastructure issue preventing PrivateLink connectivity. Snowflake suspects this may be a recurrence; remains closely engaged with CSP for their root cause investigation.
     </div>
     <div class="rc-metrics">
-      <div class="rc-metric"><div class="rc-metric-val">0.75 hrs</div><div class="rc-metric-lbl">Duration (end−start)</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">2.30 hrs</div><div class="rc-metric-lbl">Resolution (resolved−start)</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">4</div><div class="rc-metric-lbl">Total Updates</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">0.75 hrs</div><div class="rc-metric-lbl">Duration</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">2.30 hrs</div><div class="rc-metric-lbl">Resolution</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">4</div><div class="rc-metric-lbl">Updates</div></div>
       <div class="rc-metric"><div class="rc-metric-val">Azure</div><div class="rc-metric-lbl">Platform</div></div>
-      <div class="rc-metric"><div class="rc-metric-val">East US 2 (Virginia)</div><div class="rc-metric-lbl">Region</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">East US 2 (VA)</div><div class="rc-metric-lbl">Region</div></div>
       <div class="rc-metric"><div class="rc-metric-val">08:25 CDT</div><div class="rc-metric-lbl">Start (Aug 20)</div></div>
       <div class="rc-metric"><div class="rc-metric-val">10:43 CDT</div><div class="rc-metric-lbl">Resolved (Aug 20)</div></div>
     </div>
     <div class="rc-components">
       <strong>Affected:</strong> Azure - East US 2 (Virginia) - Security and Privacy Features (partial_outage → <strong style="color:#1a7a3a">operational</strong>) &nbsp;|&nbsp;
-      <strong style="color:#c57a1a">⚠ RCA timeline extended to 10 business days</strong> — awaiting 3rd-party CSP investigation
+      <strong style="color:#c57a1a">⚠ RCA extended to 10 business days</strong> — awaiting 3rd-party CSP investigation
     </div>
   </div>
 
-  <!-- KPI Cards — computed dynamically from data -->
+  <!-- KPI Cards — 7 columns including None — all computed from data -->
   <div class="section-title">Key Performance Indicators</div>
-  <div class="kpi-grid" id="kpiGrid">
-    <!-- Populated by JS after incidents array is defined -->
-  </div>
+  <div class="kpi-grid" id="kpiGrid"></div>
 
   <!-- Distribution Charts -->
   <div class="section-title">Incident Distribution</div>
@@ -236,15 +253,15 @@
   <div class="metric-legend">
     <div class="metric-legend-item">
       <div class="metric-dot" style="background:#29b5e8"></div>
-      <div><strong>Duration (hrs)</strong> = <code>incident_end_time − incident_start_time</code> — service impact window</div>
+      <div><strong>Duration (hrs)</strong> = <code>incident_end_time − incident_start_time</code></div>
     </div>
     <div class="metric-legend-item">
       <div class="metric-dot" style="background:#0a4d7c"></div>
-      <div><strong>Resolution (hrs)</strong> = <code>incident_resolved − incident_start_time</code> — full MTTR lifecycle</div>
+      <div><strong>Resolution (hrs)</strong> = <code>incident_resolved − incident_start_time</code></div>
     </div>
     <div class="metric-legend-item">
-      <div class="metric-dot" style="background:#f4a261"></div>
-      <div><strong>INC20000168</strong> Duration 0.75 hrs &amp; Resolution 2.30 hrs &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</div>
+      <div class="metric-dot" style="background:#adb5bd"></div>
+      <div>INC0152681 excluded (~1,778 hrs)</div>
     </div>
   </div>
   <div class="chart-grid-2" style="margin-top:14px;">
@@ -254,12 +271,16 @@
     </div>
     <div class="chart-card">
       <h3>⏱ Duration vs Resolution (Hours) — Top 20 by Resolution</h3>
-      <p class="chart-subtitle">Blue = Duration (end−start) &nbsp;|&nbsp; Dark = Resolution (resolved−start) &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 excluded</p>
+      <p class="chart-subtitle">Blue = Duration &nbsp;|&nbsp; Dark = Resolution &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 excluded</p>
       <div class="chart-container xtall"><canvas id="chartDuration"></canvas></div>
     </div>
   </div>
 
-  <!-- US East Table — Latest Update after Region(s) -->
+  <!--
+    US EAST TABLE
+    FIX 1: "Latest Update" column header uses class latest-update-col (white-space:normal, min-width:200px)
+    FIX 2: Sort uses a data attribute on EACH TD so sort index is unambiguous regardless of non-sortable cols
+  -->
   <div class="section-title">US East Region Incidents</div>
   <div class="table-card">
     <h3>Incidents Affecting US East Regions</h3>
@@ -268,18 +289,18 @@
     <div class="table-scroll">
       <table id="usEastTable">
         <thead><tr>
-          <th class="sortable" data-col="0"  data-type="num">#</th>
-          <th class="sortable" data-col="1"  data-type="str">Incident Name</th>
-          <th class="sortable" data-col="2"  data-type="str">Incident ID</th>
-          <th class="sortable" data-col="3"  data-type="str">Status</th>
-          <th class="sortable" data-col="4"  data-type="impact">Impact</th>
-          <th class="sortable" data-col="5"  data-type="str">Region(s)</th>
-          <th style="min-width:380px;max-width:540px">Latest Update</th>
-          <th class="sortable" data-col="7"  data-type="ts">Start (CDT)</th>
-          <th class="sortable" data-col="8"  data-type="ts">End (CDT)</th>
-          <th class="sortable" data-col="9"  data-type="ts">Resolved (CDT)</th>
-          <th class="sortable" data-col="10" data-type="num">Duration (hrs)<span class="th-sub">end−start</span></th>
-          <th class="sortable" data-col="11" data-type="num">Resolution (hrs)<span class="th-sub">resolved−start</span></th>
+          <th class="sortable" data-field="idx"      data-type="num">#</th>
+          <th class="sortable" data-field="name"     data-type="str">Incident Name</th>
+          <th class="sortable" data-field="id"       data-type="str">Incident ID</th>
+          <th class="sortable" data-field="status"   data-type="str">Status</th>
+          <th class="sortable" data-field="impact"   data-type="impact">Impact</th>
+          <th class="sortable" data-field="region"   data-type="str">Region(s)</th>
+          <th class="latest-update-col">Latest Update</th>
+          <th class="sortable" data-field="start"    data-type="ts">Start (CDT)</th>
+          <th class="sortable" data-field="end"      data-type="ts">End (CDT)</th>
+          <th class="sortable" data-field="resolved" data-type="ts">Resolved (CDT)</th>
+          <th class="sortable" data-field="duration" data-type="num">Duration (hrs)<span class="th-sub">end−start</span></th>
+          <th class="sortable" data-field="resolution" data-type="num">Resolution (hrs)<span class="th-sub">resolved−start</span></th>
           <th>Affected Components</th>
           <th>Component New Status</th>
         </tr></thead>
@@ -291,26 +312,26 @@
   <!-- All Incidents Table -->
   <div class="section-title">Complete Incident Summary</div>
   <div class="table-card">
-    <h3>All 50 Incidents — One Row Per Incident — Latest Update — All Times CDT (UTC−5)</h3>
-    <p class="table-subtitle">Duration = end_time − start_time (service impact window) &nbsp;|&nbsp; Resolution = incident_resolved − start_time (full MTTR lifecycle) &nbsp;|&nbsp; 🟢 = recently resolved (Aug 20)</p>
+    <h3 id="allTableHeading">All 50 Incidents — One Row Per Incident — All Times CDT (UTC−5)</h3>
+    <p class="table-subtitle">Duration = end_time − start_time &nbsp;|&nbsp; Resolution = incident_resolved − start_time &nbsp;|&nbsp; 🟢 = recently resolved (Aug 20)</p>
     <p class="sort-hint">💡 Click any column header to sort — click again to reverse</p>
     <div class="table-scroll">
       <table id="allTable">
         <thead><tr>
-          <th class="sortable" data-col="0"  data-type="num">#</th>
-          <th class="sortable" data-col="1"  data-type="str">Incident Name</th>
-          <th class="sortable" data-col="2"  data-type="str">Incident ID</th>
-          <th class="sortable" data-col="3"  data-type="str">Status</th>
-          <th class="sortable" data-col="4"  data-type="impact">Impact</th>
-          <th class="sortable" data-col="5"  data-type="ts">Start (CDT)</th>
-          <th class="sortable" data-col="6"  data-type="ts">End (CDT)</th>
-          <th class="sortable" data-col="7"  data-type="ts">Resolved (CDT)</th>
-          <th class="sortable" data-col="8"  data-type="ts">Last Updated (CDT)</th>
-          <th class="sortable" data-col="9"  data-type="num">Updates</th>
-          <th class="sortable" data-col="10" data-type="num">Duration (hrs)<span class="th-sub">end−start</span></th>
-          <th class="sortable" data-col="11" data-type="num">Resolution (hrs)<span class="th-sub">resolved−start</span></th>
-          <th class="sortable" data-col="12" data-type="str">Platform</th>
-          <th class="sortable" data-col="13" data-type="str">Primary Region / Component</th>
+          <th class="sortable" data-field="idx"        data-type="num">#</th>
+          <th class="sortable" data-field="name"       data-type="str">Incident Name</th>
+          <th class="sortable" data-field="id"         data-type="str">Incident ID</th>
+          <th class="sortable" data-field="status"     data-type="str">Status</th>
+          <th class="sortable" data-field="impact"     data-type="impact">Impact</th>
+          <th class="sortable" data-field="start"      data-type="ts">Start (CDT)</th>
+          <th class="sortable" data-field="end"        data-type="ts">End (CDT)</th>
+          <th class="sortable" data-field="resolved"   data-type="ts">Resolved (CDT)</th>
+          <th class="sortable" data-field="updated"    data-type="ts">Last Updated (CDT)</th>
+          <th class="sortable" data-field="updates"    data-type="num">Updates</th>
+          <th class="sortable" data-field="duration"   data-type="num">Duration (hrs)<span class="th-sub">end−start</span></th>
+          <th class="sortable" data-field="resolution" data-type="num">Resolution (hrs)<span class="th-sub">resolved−start</span></th>
+          <th class="sortable" data-field="platform"   data-type="str">Platform</th>
+          <th class="sortable" data-field="region"     data-type="str">Primary Region</th>
           <th>Old Status</th>
           <th>New Status</th>
           <th>Latest Update Body</th>
@@ -324,7 +345,6 @@
 
 <footer>
   Snowflake Incident Intelligence Dashboard &nbsp;|&nbsp; Source: snowflake_incidents-08-20-2026-143032.xlsx &nbsp;|&nbsp; Generated August 20, 2026 &nbsp;|&nbsp; All times CDT (UTC−5)
-  <br>Duration = incident_end_time − incident_start_time &nbsp;|&nbsp; Resolution = incident_resolved − incident_start_time
 </footer>
 
 <script>
@@ -351,41 +371,50 @@ function fmtCDT(iso){
   const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][c.getUTCMonth()];
   return`${mo} ${c.getUTCDate()} ${c.getUTCFullYear()} ${String(c.getUTCHours()).padStart(2,'0')}:${String(c.getUTCMinutes()).padStart(2,'0')} CDT`;
 }
-function durCellWithRaw(val,isRes){
-  if(val===null||val===undefined)return`<td class="dur-cell dur-na" data-raw="999999">N/A</td>`;
+function durCell(val,isRes){
+  if(val===null||val===undefined)return`<td class="dur-cell dur-na" data-sort-val="999999">N/A</td>`;
   const t1=isRes?24:10,t2=isRes?6:2;
   const cls=val>=t1?'dur-high':val>=t2?'dur-med':'dur-low';
-  return`<td class="dur-cell ${cls}" data-raw="${val.toFixed(4)}">${val.toFixed(2)}</td>`;
+  return`<td class="dur-cell ${cls}" data-sort-val="${val.toFixed(4)}">${val.toFixed(2)}</td>`;
 }
 
-function getTableSortValue(cell,type){
-  if(!cell)return'';
-  const raw=cell.getAttribute('data-raw');
-  if(raw!==null)return parseFloat(raw);
-  const txt=cell.textContent.trim();
-  if(type==='num')    return parseFloat(txt)||0;
-  if(type==='ts')     return txt==='—'?Infinity:new Date(txt.replace(' CDT','')).getTime()||0;
-  if(type==='impact') return IMPACT_ORDER[txt.toLowerCase()]??99;
-  return txt.toLowerCase();
-}
-function attachSortToTable(tableId){
+// ============================================================
+// SORT ENGINE — field-based (no index confusion)
+// Each TD stores data-sort-val; sort reads it by field name
+// stored on the th[data-field] and matched to td[data-field]
+// ============================================================
+function attachSort(tableId){
   const table=document.getElementById(tableId);if(!table)return;
-  const headers=table.querySelectorAll('th.sortable');
+  const headers=[...table.querySelectorAll('th.sortable')];
   const tbody=table.querySelector('tbody');
-  let currentCol=-1,currentDir=1;
+  let curField='',curDir=1;
+
   headers.forEach(th=>{
     th.addEventListener('click',()=>{
-      const col=parseInt(th.getAttribute('data-col'));
-      const type=th.getAttribute('data-type')||'str';
-      currentDir=(currentCol===col)?currentDir*-1:1;
-      currentCol=col;
+      const field=th.dataset.field;
+      const type=th.dataset.type||'str';
+      curDir=(curField===field)?curDir*-1:1;
+      curField=field;
       headers.forEach(h=>h.classList.remove('sort-asc','sort-desc'));
-      th.classList.add(currentDir===1?'sort-asc':'sort-desc');
-      const rows=Array.from(tbody.querySelectorAll('tr'));
+      th.classList.add(curDir===1?'sort-asc':'sort-desc');
+
+      const rows=[...tbody.querySelectorAll('tr')];
       rows.sort((a,b)=>{
-        const vA=getTableSortValue(a.querySelectorAll('td')[col],type);
-        const vB=getTableSortValue(b.querySelectorAll('td')[col],type);
-        return vA<vB?-1*currentDir:vA>vB?1*currentDir:0;
+        const cellA=a.querySelector(`td[data-field="${field}"]`);
+        const cellB=b.querySelector(`td[data-field="${field}"]`);
+        if(!cellA||!cellB)return 0;
+        // Prefer data-sort-val for numeric/ts fields
+        const svA=cellA.dataset.sortVal;
+        const svB=cellB.dataset.sortVal;
+        if(svA!==undefined&&svB!==undefined){
+          return(parseFloat(svA)-parseFloat(svB))*curDir;
+        }
+        const txtA=cellA.textContent.trim().toLowerCase();
+        const txtB=cellB.textContent.trim().toLowerCase();
+        if(type==='impact'){
+          return(IMPACT_ORDER[txtA.split(' ')[0]]??99)-(IMPACT_ORDER[txtB.split(' ')[0]]??99);
+        }
+        return txtA<txtB?-curDir:txtA>txtB?curDir:0;
       });
       rows.forEach(r=>tbody.appendChild(r));
     });
@@ -393,7 +422,7 @@ function attachSortToTable(tableId){
 }
 
 // ============================================================
-// DATA — 50 incidents from snowflake_incidents-08-20-2026-143032.xlsx
+// DATA
 // ============================================================
 const incidents=[
   {name:"INC20000168",id:"n54hrszdq7h7",status:"resolved",impact:"major",flag:"recent",
@@ -401,28 +430,28 @@ const incidents=[
    updates:4,platform:"Azure",region:"Azure - East US 2 (Virginia)",
    component:"Azure - East US 2 (Virginia) - Security and Privacy Features",
    oldStatus:"partial_outage",newStatus:"operational",
-   updateBody:"RESOLVED: CSP confirmed mitigation complete; Snowflake independently verified service restored. Customers unable to connect via PrivateLink; other connection methods unaffected. Root cause: 3rd-party CSP virtual networking infrastructure issue (suspected recurrence). CSP performing own investigation. RCA within 10 business days."},
+   updateBody:"RESOLVED: CSP confirmed mitigation complete; Snowflake independently verified service restored. PrivateLink connectivity issue caused by 3rd-party CSP virtual networking infrastructure issue (suspected recurrence). RCA within 10 business days."},
 
   {name:"INC20000163",id:"yk5sqhcjp266",status:"resolved",impact:"major",flag:"",
    startISO:"2026-08-18T11:20:00Z",endISO:"2026-08-18T13:45:00Z",resolvedISO:"2026-08-18T14:51:45Z",updatedISO:"2026-08-18T14:51:45Z",
    updates:4,platform:"AWS",region:"AWS - US East (N. Virginia)",
    component:"AWS - US East (N. Virginia) - AI and ML",
    oldStatus:"partial_outage",newStatus:"operational",
-   updateBody:"RESOLVED: Fix implemented and environment monitored to confirm service restoration. Cortex Code AI/ML services via Snowsight fully restored. Root cause: resource exhaustion in compute infrastructure caused container scheduling failures. RCA within 5 business days."},
+   updateBody:"RESOLVED: Fix implemented and environment monitored. Cortex Code AI/ML services via Snowsight fully restored. Root cause: resource exhaustion in compute infrastructure caused container scheduling failures. RCA within 5 business days."},
 
   {name:"INC20000158",id:"v8nyb5fhd95v",status:"resolved",impact:"critical",flag:"",
    startISO:"2026-08-14T17:05:00Z",endISO:"2026-08-14T18:12:00Z",resolvedISO:"2026-08-14T19:35:34Z",updatedISO:"2026-08-14T19:35:34Z",
    updates:4,platform:"Azure",region:"Azure - East US 2 (Virginia)",
    component:"Azure - East US 2 (Virginia) - Applications",
    oldStatus:"major_outage",newStatus:"operational",
-   updateBody:"RESOLVED: Fix implemented (config reverted + infrastructure restarted); environment monitored. Snowsight 503 errors resolved. Root cause: routine system config change elevated metadata layer latency. RCA within 5 business days."},
+   updateBody:"RESOLVED: Config reverted + infrastructure restarted; Snowsight 503 errors resolved. Root cause: routine system config change elevated metadata layer latency. RCA within 5 business days."},
 
   {name:"INC20000157",id:"ylfhrtlppdlt",status:"resolved",impact:"critical",flag:"",
    startISO:"2026-08-14T14:20:00Z",endISO:"2026-08-14T14:45:00Z",resolvedISO:"2026-08-14T16:28:44Z",updatedISO:"2026-08-14T16:28:44Z",
    updates:2,platform:"AWS",region:"AWS - US East (Ohio)",
    component:"AWS - US East (Ohio) - Applications",
    oldStatus:"degraded_performance",newStatus:"operational",
-   updateBody:"RESOLVED: Service infrastructure layer for auth/session initiation entered unhealthy state causing login failures. Impact 14:20–14:45 UTC. RCA within 5 business days."},
+   updateBody:"RESOLVED: Service infrastructure layer for auth/session initiation entered unhealthy state causing login failures. RCA within 5 business days."},
 
   {name:"INC20000139",id:"j7drswl3ssy7",status:"postmortem",impact:"minor",flag:"",
    startISO:"2026-08-05T11:40:00Z",endISO:"2026-08-05T15:00:00Z",resolvedISO:"2026-08-05T15:49:46Z",updatedISO:"2026-08-14T06:59:05Z",
@@ -448,14 +477,14 @@ const incidents=[
   {name:"INC20000115",id:"0js22rxjm66q",status:"postmortem",impact:"critical",flag:"",
    startISO:"2026-07-30T00:18:00Z",endISO:"2026-07-30T03:52:00Z",resolvedISO:"2026-07-30T04:56:55Z",updatedISO:"2026-08-10T04:32:06Z",
    updates:5,platform:"AWS",region:"Global — 32 regions (AWS/Azure)",
-   component:"Applications (32 regions across AWS/Azure — major_outage → operational)",
+   component:"Applications (32 regions across AWS/Azure)",
    oldStatus:"major_outage (all)",newStatus:"operational (all)",
    updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000115"},
 
   {name:"INC20000106",id:"0yt2v05n42gz",status:"postmortem",impact:"minor",flag:"",
    startISO:"2026-07-25T07:45:00Z",endISO:"2026-07-25T15:05:00Z",resolvedISO:"2026-07-25T16:01:31Z",updatedISO:"2026-07-31T20:38:42Z",
    updates:8,platform:"Azure",region:"Azure - Central US (Iowa)",
-   component:"Azure - Central US (Iowa) - Databases, Tables, and Views | Azure - Central US (Iowa) - Virtual Warehouses",
+   component:"Azure - Central US (Iowa) - Databases, Tables, and Views | Virtual Warehouses",
    oldStatus:"degraded_performance (all)",newStatus:"operational (all)",
    updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000106"},
 
@@ -469,7 +498,7 @@ const incidents=[
   {name:"INC20000082",id:"kw59fjhlv3jq",status:"postmortem",impact:"major",flag:"",
    startISO:"2026-07-10T13:26:00Z",endISO:"2026-07-10T14:33:00Z",resolvedISO:"2026-07-10T16:28:21Z",updatedISO:"2026-07-18T01:03:55Z",
    updates:5,platform:"Azure",region:"Azure - East US 2 (Virginia)",
-   component:"Azure - East US 2 (Virginia) - Applications | Azure - East US 2 (Virginia) - Security and Privacy Features",
+   component:"Azure - East US 2 (Virginia) - Applications | Security and Privacy Features",
    oldStatus:"partial_outage (all)",newStatus:"operational (all)",
    updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000082"},
 
@@ -553,7 +582,7 @@ const incidents=[
   {name:"INC0157230",id:"mkbgc4vgdhdb",status:"postmortem",impact:"minor",flag:"",
    startISO:"2026-05-14T22:50:00Z",endISO:"2026-05-15T04:05:00Z",resolvedISO:"2026-05-15T05:25:07Z",updatedISO:"2026-05-22T00:26:25Z",
    updates:4,platform:"AWS",region:"Multi-region (AWS/Azure) — AI and ML",
-   component:"AWS - US West (Oregon)/Asia Pacific/Azure Australia — AI and ML (4 regions)",
+   component:"AWS/Azure — AI and ML (4 regions)",
    oldStatus:"operational (all)",newStatus:"operational (all)",
    updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0157230"},
 
@@ -632,7 +661,7 @@ const incidents=[
    updates:12,platform:"AWS",region:"AWS - Middle East (UAE)",
    component:"AWS - Middle East (UAE) - Full Region (12 components)",
    oldStatus:"major_outage (all)",newStatus:"major_outage (all)",
-   updateBody:"Region removed from available listings following CSP advice to transition workloads to other regions due to persistent issues."},
+   updateBody:"Region removed from available listings following CSP advice to transition workloads to other regions."},
 
   {name:"Azure - Canada Central (Toronto): INC0152309",id:"8mj6n9xzhc96",status:"postmortem",impact:"minor",flag:"",
    startISO:"2026-02-23T19:26:00Z",endISO:"2026-02-23T21:11:00Z",resolvedISO:"2026-02-23T22:07:16Z",updatedISO:"2026-03-02T22:46:44Z",
@@ -747,28 +776,31 @@ const incidents=[
    updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0144343"}
 ];
 
-incidents.forEach(i=>{
-  i.duration  =hoursDiff(i.startISO,i.endISO);
-  i.resolution=hoursDiff(i.startISO,i.resolvedISO);
+// Pre-compute derived fields
+incidents.forEach((i,idx)=>{
+  i._idx    = idx+1;
+  i.duration  = hoursDiff(i.startISO,i.endISO);
+  i.resolution= hoursDiff(i.startISO,i.resolvedISO);
 });
 
 // ============================================================
-// COMPUTE KPIs DYNAMICALLY — guarantees totals always add up
+// COMPUTE & RENDER KPIs — always from data, never hardcoded
 // ============================================================
 (function(){
-  const total  = incidents.length;
-  const crit   = incidents.filter(i=>i.impact==='critical').length;
-  const maj    = incidents.filter(i=>i.impact==='major').length;
-  const min    = incidents.filter(i=>i.impact==='minor').length;
-  const res    = incidents.filter(i=>i.status==='resolved').length;
-  const pm     = incidents.filter(i=>i.status==='postmortem').length;
-  const closed = res + pm;
+  const total = incidents.length;
+  const crit  = incidents.filter(i=>i.impact==='critical').length;
+  const maj   = incidents.filter(i=>i.impact==='major').length;
+  const min   = incidents.filter(i=>i.impact==='minor').length;
+  const none  = incidents.filter(i=>i.impact==='none').length;
+  const res   = incidents.filter(i=>i.status==='resolved').length;
+  const pm    = incidents.filter(i=>i.status==='postmortem').length;
+  const closed= res+pm;
 
-  // Verify: none + 2 unknowns = total - (crit+maj+min)
-  const noneCount = total - crit - maj - min;
+  // Sanity check
+  console.assert(crit+maj+min+none===total,`Impact counts ${crit+maj+min+none}≠${total}`);
+  console.assert(res+pm===total,`Status counts ${res+pm}≠${total}`);
 
-  const grid = document.getElementById('kpiGrid');
-  grid.innerHTML = `
+  document.getElementById('kpiGrid').innerHTML=`
     <div class="kpi-card">
       <div class="kpi-number">${total}</div>
       <div class="kpi-label">Total Incidents</div>
@@ -789,6 +821,11 @@ incidents.forEach(i=>{
       <div class="kpi-label">Minor</div>
       <div class="kpi-sub">${Math.round(min/total*100)}% of total</div>
     </div>
+    <div class="kpi-card none-kpi">
+      <div class="kpi-number">${none}</div>
+      <div class="kpi-label">None / Unclassified</div>
+      <div class="kpi-sub">${Math.round(none/total*100)}% of total</div>
+    </div>
     <div class="kpi-card resolved-kpi">
       <div class="kpi-number">${res}</div>
       <div class="kpi-label">Resolved</div>
@@ -799,11 +836,27 @@ incidents.forEach(i=>{
       <div class="kpi-label">Postmortem</div>
       <div class="kpi-sub">${closed>0?Math.round(pm/closed*100):0}% of closed</div>
     </div>`;
+
+  document.getElementById('allTableHeading').textContent=
+    `All ${total} Incidents — One Row Per Incident — All Times CDT (UTC−5)`;
 })();
 
 // ============================================================
-// TABLE BUILDERS
+// TABLE BUILDERS — each TD carries data-field + data-sort-val
+// This allows field-based sort regardless of column position
 // ============================================================
+function mkTd(field, text, sortVal, cls=''){
+  const sv = sortVal!==undefined ? ` data-sort-val="${sortVal}"` : '';
+  return `<td data-field="${field}"${sv} class="${cls}">${text}</td>`;
+}
+function mkDurTd(field, val, isRes){
+  if(val===null||val===undefined)
+    return`<td data-field="${field}" data-sort-val="999999" class="dur-cell dur-na">N/A</td>`;
+  const t1=isRes?24:10,t2=isRes?6:2;
+  const cls=val>=t1?'dur-high':val>=t2?'dur-med':'dur-low';
+  return`<td data-field="${field}" data-sort-val="${val.toFixed(4)}" class="dur-cell ${cls}">${val.toFixed(2)}</td>`;
+}
+
 function buildUsEastRows(){
   const kw=['us east (n. virginia)','us east (ohio)','us east (commercial gov-virginia)',
             'east us 2 (virginia)','east us (virginia)'];
@@ -813,21 +866,25 @@ function buildUsEastRows(){
       const tr=document.createElement('tr');
       if(i.flag==='recent')tr.classList.add('row-recently-resolved');
       const pfx=i.flag==='recent'?'🟢 ':'';
-      tr.innerHTML=`
-        <td data-raw="${idx+1}">${idx+1}</td>
-        <td style="font-weight:600;font-size:0.68rem;min-width:170px">${pfx}<span>${i.name}</span></td>
-        <td style="font-family:monospace;font-size:0.65rem">${i.id}</td>
-        <td data-raw="${i.status}">${statusBadge(i.status)}</td>
-        <td data-raw="${IMPACT_ORDER[i.impact]??99}">${impactBadge(i.impact)}</td>
-        <td class="region-cell">${i.region}</td>
-        <td class="update-body-wide">${i.updateBody}</td>
-        <td class="ts" data-raw="${i.startISO||''}">${fmtCDT(i.startISO)}</td>
-        <td class="ts" data-raw="${i.endISO||''}">${fmtCDT(i.endISO)}</td>
-        <td class="ts" data-raw="${i.resolvedISO||''}">${fmtCDT(i.resolvedISO)}</td>
-        ${durCellWithRaw(i.duration,false)}
-        ${durCellWithRaw(i.resolution,true)}
-        <td class="component-cell">${i.component}</td>
-        <td style="font-size:0.65rem">${i.newStatus}</td>`;
+      const startTs = i.startISO?new Date(i.startISO).getTime():Infinity;
+      const endTs   = i.endISO?new Date(i.endISO).getTime():Infinity;
+      const resTs   = i.resolvedISO?new Date(i.resolvedISO).getTime():Infinity;
+      tr.innerHTML=
+        mkTd('idx',    idx+1,         idx+1)+
+        mkTd('name',   `${pfx}<span style="font-weight:600;font-size:0.68rem">${i.name}</span>`, i.name.toLowerCase())+
+        mkTd('id',     `<span style="font-family:monospace;font-size:0.65rem">${i.id}</span>`, i.id)+
+        mkTd('status', statusBadge(i.status), i.status)+
+        mkTd('impact', impactBadge(i.impact), IMPACT_ORDER[i.impact]??99)+
+        mkTd('region', i.region, i.region.toLowerCase(), 'region-cell')+
+        // Latest Update — no data-field needed for sort (not sortable)
+        `<td class="update-body-wide">${i.updateBody}</td>`+
+        mkTd('start',  fmtCDT(i.startISO),    startTs===Infinity?9e15:startTs,  'ts')+
+        mkTd('end',    fmtCDT(i.endISO),      endTs===Infinity?9e15:endTs,      'ts')+
+        mkTd('resolved',fmtCDT(i.resolvedISO),resTs===Infinity?9e15:resTs,      'ts')+
+        mkDurTd('duration',   i.duration,  false)+
+        mkDurTd('resolution', i.resolution,true)+
+        mkTd('component', i.component, i.component.toLowerCase(), 'component-cell')+
+        mkTd('newStatus', i.newStatus, i.newStatus, 'ts');
       return tr;
     });
 }
@@ -837,33 +894,40 @@ function buildAllRows(){
     const tr=document.createElement('tr');
     if(i.flag==='recent')tr.classList.add('row-recently-resolved');
     const pfx=i.flag==='recent'?'🟢 ':'';
-    tr.innerHTML=`
-      <td data-raw="${idx+1}">${idx+1}</td>
-      <td style="font-weight:600;font-size:0.67rem;min-width:160px">${pfx}<span>${i.name}</span></td>
-      <td style="font-family:monospace;font-size:0.62rem">${i.id}</td>
-      <td data-raw="${i.status}">${statusBadge(i.status)}</td>
-      <td data-raw="${IMPACT_ORDER[i.impact]??99}">${impactBadge(i.impact)}</td>
-      <td class="ts" data-raw="${i.startISO||''}">${fmtCDT(i.startISO)}</td>
-      <td class="ts" data-raw="${i.endISO||''}">${fmtCDT(i.endISO)}</td>
-      <td class="ts" data-raw="${i.resolvedISO||''}">${fmtCDT(i.resolvedISO)}</td>
-      <td class="ts" data-raw="${i.updatedISO||''}">${fmtCDT(i.updatedISO)}</td>
-      <td style="text-align:center" data-raw="${i.updates}">${i.updates}</td>
-      ${durCellWithRaw(i.duration,false)}
-      ${durCellWithRaw(i.resolution,true)}
-      <td style="font-size:0.68rem;font-weight:600">${i.platform}</td>
-      <td class="component-cell">${i.region}</td>
-      <td style="font-size:0.65rem">${i.oldStatus}</td>
-      <td style="font-size:0.65rem">${i.newStatus}</td>
-      <td class="update-body">${i.updateBody}</td>`;
+    const startTs = i.startISO?new Date(i.startISO).getTime():Infinity;
+    const endTs   = i.endISO?new Date(i.endISO).getTime():Infinity;
+    const resTs   = i.resolvedISO?new Date(i.resolvedISO).getTime():Infinity;
+    const updTs   = i.updatedISO?new Date(i.updatedISO).getTime():Infinity;
+    tr.innerHTML=
+      mkTd('idx',      idx+1,         idx+1)+
+      mkTd('name',     `${pfx}<span style="font-weight:600;font-size:0.67rem">${i.name}</span>`, i.name.toLowerCase())+
+      mkTd('id',       `<span style="font-family:monospace;font-size:0.62rem">${i.id}</span>`, i.id)+
+      mkTd('status',   statusBadge(i.status), i.status)+
+      mkTd('impact',   impactBadge(i.impact), IMPACT_ORDER[i.impact]??99)+
+      mkTd('start',    fmtCDT(i.startISO),    startTs===Infinity?9e15:startTs, 'ts')+
+      mkTd('end',      fmtCDT(i.endISO),      endTs===Infinity?9e15:endTs,     'ts')+
+      mkTd('resolved', fmtCDT(i.resolvedISO), resTs===Infinity?9e15:resTs,     'ts')+
+      mkTd('updated',  fmtCDT(i.updatedISO),  updTs===Infinity?9e15:updTs,     'ts')+
+      mkTd('updates',  i.updates, i.updates)+
+      mkDurTd('duration',   i.duration,  false)+
+      mkDurTd('resolution', i.resolution,true)+
+      mkTd('platform', `<span style="font-weight:600;font-size:0.68rem">${i.platform}</span>`, i.platform.toLowerCase())+
+      mkTd('region',   i.region, i.region.toLowerCase(), 'component-cell')+
+      mkTd('oldStatus',i.oldStatus, i.oldStatus, 'ts')+
+      mkTd('newStatus',i.newStatus, i.newStatus, 'ts')+
+      `<td class="update-body">${i.updateBody}</td>`;
     return tr;
   });
 }
 
-function renderRows(tbodyId,rows){const tbody=document.getElementById(tbodyId);rows.forEach(r=>tbody.appendChild(r));}
+function renderRows(tbodyId,rows){
+  const tbody=document.getElementById(tbodyId);
+  rows.forEach(r=>tbody.appendChild(r));
+}
 renderRows('usEastBody',buildUsEastRows());
 renderRows('allBody',   buildAllRows());
-attachSortToTable('usEastTable');
-attachSortToTable('allTable');
+attachSort('usEastTable');
+attachSort('allTable');
 
 // ── CHARTS ────────────────────────────────────────────────
 
@@ -893,7 +957,6 @@ attachSortToTable('allTable');
   });
 })();
 
-// Status chart — always computed from data, never hardcoded
 (function(){
   const pm =incidents.filter(i=>i.status==='postmortem').length;
   const res=incidents.filter(i=>i.status==='resolved').length;
