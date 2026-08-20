@@ -124,12 +124,7 @@
   .dur-low{color:var(--minor);}
   .dur-na{color:#adb5bd;font-style:italic;}
 
-  /* Expanded update body for US East table */
-  .update-body-wide{
-    min-width:360px;max-width:520px;
-    font-size:0.72rem;color:#334;line-height:1.55;
-    white-space:normal;word-break:break-word;
-  }
+  .update-body-wide{min-width:360px;max-width:520px;font-size:0.72rem;color:#334;line-height:1.55;white-space:normal;word-break:break-word;}
   .update-body{max-width:280px;font-size:0.67rem;color:#445;line-height:1.5;}
   .component-cell{max-width:200px;font-size:0.67rem;color:#445;}
   .region-cell{max-width:180px;font-size:0.67rem;color:#445;}
@@ -196,39 +191,10 @@
     </div>
   </div>
 
-  <!-- KPI Cards -->
+  <!-- KPI Cards — computed dynamically from data -->
   <div class="section-title">Key Performance Indicators</div>
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-number">50</div>
-      <div class="kpi-label">Total Incidents</div>
-      <div class="kpi-sub">Aug 2025 – Aug 2026</div>
-    </div>
-    <div class="kpi-card critical">
-      <div class="kpi-number">19</div>
-      <div class="kpi-label">Critical</div>
-      <div class="kpi-sub">38% of total</div>
-    </div>
-    <div class="kpi-card major-kpi">
-      <div class="kpi-number">19</div>
-      <div class="kpi-label">Major</div>
-      <div class="kpi-sub">38% of total</div>
-    </div>
-    <div class="kpi-card minor-kpi">
-      <div class="kpi-number">10</div>
-      <div class="kpi-label">Minor</div>
-      <div class="kpi-sub">20% of total</div>
-    </div>
-    <div class="kpi-card resolved-kpi">
-      <div class="kpi-number">6</div>
-      <div class="kpi-label">Resolved</div>
-      <div class="kpi-sub">12% of total</div>
-    </div>
-    <div class="kpi-card postmortem-card">
-      <div class="kpi-number">46</div>
-      <div class="kpi-label">Postmortem</div>
-      <div class="kpi-sub">92% of closed</div>
-    </div>
+  <div class="kpi-grid" id="kpiGrid">
+    <!-- Populated by JS after incidents array is defined -->
   </div>
 
   <!-- Distribution Charts -->
@@ -278,7 +244,7 @@
     </div>
     <div class="metric-legend-item">
       <div class="metric-dot" style="background:#f4a261"></div>
-      <div><strong>INC20000168</strong> now fully included — Duration 0.75 hrs &amp; Resolution 2.30 hrs &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</div>
+      <div><strong>INC20000168</strong> Duration 0.75 hrs &amp; Resolution 2.30 hrs &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</div>
     </div>
   </div>
   <div class="chart-grid-2" style="margin-top:14px;">
@@ -288,7 +254,7 @@
     </div>
     <div class="chart-card">
       <h3>⏱ Duration vs Resolution (Hours) — Top 20 by Resolution</h3>
-      <p class="chart-subtitle">Blue = Duration (end−start) &nbsp;|&nbsp; Dark = Resolution (resolved−start) &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 excluded (~1,778 hrs)</p>
+      <p class="chart-subtitle">Blue = Duration (end−start) &nbsp;|&nbsp; Dark = Resolution (resolved−start) &nbsp;|&nbsp; Sorted desc &nbsp;|&nbsp; INC0152681 excluded</p>
       <div class="chart-container xtall"><canvas id="chartDuration"></canvas></div>
     </div>
   </div>
@@ -428,15 +394,8 @@ function attachSortToTable(tableId){
 
 // ============================================================
 // DATA — 50 incidents from snowflake_incidents-08-20-2026-143032.xlsx
-// KEY CHANGE: INC20000168 monitoring → resolved
-//   - incident_resolved: 2026-08-20T15:43:18Z (10:43 CDT Aug 20)
-//   - component_new_status: partial_outage → operational
-//   - total_updates: 3 → 4
-//   - resolution: 15:43 − 13:25 = 2.30 hrs (now calculable)
-//   - RCA within 10 business days (not 5 — 3rd-party CSP investigation)
 // ============================================================
 const incidents=[
-  // ── INC20000168: now RESOLVED (was monitoring) ──────────
   {name:"INC20000168",id:"n54hrszdq7h7",status:"resolved",impact:"major",flag:"recent",
    startISO:"2026-08-20T13:25:00Z",endISO:"2026-08-20T14:10:00Z",resolvedISO:"2026-08-20T15:43:18Z",updatedISO:"2026-08-20T15:43:18Z",
    updates:4,platform:"Azure",region:"Azure - East US 2 (Virginia)",
@@ -444,7 +403,6 @@ const incidents=[
    oldStatus:"partial_outage",newStatus:"operational",
    updateBody:"RESOLVED: CSP confirmed mitigation complete; Snowflake independently verified service restored. Customers unable to connect via PrivateLink; other connection methods unaffected. Root cause: 3rd-party CSP virtual networking infrastructure issue (suspected recurrence). CSP performing own investigation. RCA within 10 business days."},
 
-  // ── EXISTING INCIDENTS ───────────────────────────────────
   {name:"INC20000163",id:"yk5sqhcjp266",status:"resolved",impact:"major",flag:"",
    startISO:"2026-08-18T11:20:00Z",endISO:"2026-08-18T13:45:00Z",resolvedISO:"2026-08-18T14:51:45Z",updatedISO:"2026-08-18T14:51:45Z",
    updates:4,platform:"AWS",region:"AWS - US East (N. Virginia)",
@@ -464,7 +422,7 @@ const incidents=[
    updates:2,platform:"AWS",region:"AWS - US East (Ohio)",
    component:"AWS - US East (Ohio) - Applications",
    oldStatus:"degraded_performance",newStatus:"operational",
-   updateBody:"RESOLVED: Service infrastructure layer for auth/session initiation entered unhealthy state causing login failures and Snowsight service disruptions. Impact 14:20–14:45 UTC. RCA within 5 business days."},
+   updateBody:"RESOLVED: Service infrastructure layer for auth/session initiation entered unhealthy state causing login failures. Impact 14:20–14:45 UTC. RCA within 5 business days."},
 
   {name:"INC20000139",id:"j7drswl3ssy7",status:"postmortem",impact:"minor",flag:"",
    startISO:"2026-08-05T11:40:00Z",endISO:"2026-08-05T15:00:00Z",resolvedISO:"2026-08-05T15:49:46Z",updatedISO:"2026-08-14T06:59:05Z",
@@ -794,7 +752,58 @@ incidents.forEach(i=>{
   i.resolution=hoursDiff(i.startISO,i.resolvedISO);
 });
 
-// US EAST TABLE — Latest Update AFTER Region(s)
+// ============================================================
+// COMPUTE KPIs DYNAMICALLY — guarantees totals always add up
+// ============================================================
+(function(){
+  const total  = incidents.length;
+  const crit   = incidents.filter(i=>i.impact==='critical').length;
+  const maj    = incidents.filter(i=>i.impact==='major').length;
+  const min    = incidents.filter(i=>i.impact==='minor').length;
+  const res    = incidents.filter(i=>i.status==='resolved').length;
+  const pm     = incidents.filter(i=>i.status==='postmortem').length;
+  const closed = res + pm;
+
+  // Verify: none + 2 unknowns = total - (crit+maj+min)
+  const noneCount = total - crit - maj - min;
+
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-number">${total}</div>
+      <div class="kpi-label">Total Incidents</div>
+      <div class="kpi-sub">Aug 2025 – Aug 2026</div>
+    </div>
+    <div class="kpi-card critical">
+      <div class="kpi-number">${crit}</div>
+      <div class="kpi-label">Critical</div>
+      <div class="kpi-sub">${Math.round(crit/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card major-kpi">
+      <div class="kpi-number">${maj}</div>
+      <div class="kpi-label">Major</div>
+      <div class="kpi-sub">${Math.round(maj/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card minor-kpi">
+      <div class="kpi-number">${min}</div>
+      <div class="kpi-label">Minor</div>
+      <div class="kpi-sub">${Math.round(min/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card resolved-kpi">
+      <div class="kpi-number">${res}</div>
+      <div class="kpi-label">Resolved</div>
+      <div class="kpi-sub">${Math.round(res/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card postmortem-card">
+      <div class="kpi-number">${pm}</div>
+      <div class="kpi-label">Postmortem</div>
+      <div class="kpi-sub">${closed>0?Math.round(pm/closed*100):0}% of closed</div>
+    </div>`;
+})();
+
+// ============================================================
+// TABLE BUILDERS
+// ============================================================
 function buildUsEastRows(){
   const kw=['us east (n. virginia)','us east (ohio)','us east (commercial gov-virginia)',
             'east us 2 (virginia)','east us (virginia)'];
@@ -823,7 +832,6 @@ function buildUsEastRows(){
     });
 }
 
-// ALL INCIDENTS TABLE — standard column order
 function buildAllRows(){
   return incidents.map((i,idx)=>{
     const tr=document.createElement('tr');
@@ -885,12 +893,13 @@ attachSortToTable('allTable');
   });
 })();
 
+// Status chart — always computed from data, never hardcoded
 (function(){
-  const pm=incidents.filter(i=>i.status==='postmortem').length;
+  const pm =incidents.filter(i=>i.status==='postmortem').length;
   const res=incidents.filter(i=>i.status==='resolved').length;
   new Chart(document.getElementById('chartStatus'),{
     type:'doughnut',
-    data:{labels:['Postmortem','Resolved'],
+    data:{labels:[`Postmortem (${pm})`,`Resolved (${res})`],
       datasets:[{data:[pm,res],backgroundColor:['#29b5e8','#27ae60'],borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}
