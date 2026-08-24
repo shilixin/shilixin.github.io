@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Snowflake Incident Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --sf-blue:#29b5e8; --sf-dark:#0a4d7c; --sf-light:#e8f6fd; --sf-accent:#1a8fc1;
+    --sf-gray:#f4f7fb; --sf-border:#d0e8f5; --sf-text:#1a2e3b; --sf-muted:#5a7a8a;
+    --critical:#e63946; --major:#f4a261; --minor:#2a9d8f;
+    --resolved-green:#27ae60; --postmortem:#29b5e8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:var(--sf-gray);color:var(--sf-text);font-size:13px;}
+
+  header{background:linear-gradient(135deg,var(--sf-dark) 0%,var(--sf-accent) 100%);color:white;
+    padding:22px 32px;display:flex;align-items:center;gap:18px;box-shadow:0 2px 10px rgba(10,77,124,0.3);}
+  header .logo{font-size:2rem;font-weight:900;letter-spacing:-1px;color:var(--sf-blue);}
+  header .title-block h1{font-size:1.35rem;font-weight:700;}
+  header .title-block p{font-size:0.8rem;opacity:0.8;margin-top:2px;}
+  header .badge{margin-left:auto;background:rgba(41,181,232,0.2);border:1px solid var(--sf-blue);
+    color:var(--sf-blue);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;}
+
+  .clear-banner{background:linear-gradient(90deg,#1a5c2a,#27ae60);color:white;
+    padding:10px 28px;display:flex;align-items:center;gap:12px;font-size:0.82rem;}
+  .clear-banner .clr-ts{margin-left:auto;opacity:0.85;font-size:0.75rem;white-space:nowrap;}
+
+  .resolved-card{background:white;border-radius:10px;padding:16px 18px;
+    border-left:5px solid var(--major);box-shadow:0 2px 10px rgba(244,162,97,0.14);margin-bottom:6px;}
+  .rc-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+  .rc-name{font-size:0.95rem;font-weight:700;color:var(--sf-dark);}
+  .rc-meta{font-size:0.72rem;color:var(--sf-muted);}
+  .rc-body{font-size:0.75rem;color:#334;line-height:1.55;background:#fef9f0;
+    border-radius:6px;padding:9px 12px;border:1px solid #fad7a0;margin-bottom:8px;}
+  .rc-metrics{display:flex;gap:12px;flex-wrap:wrap;}
+  .rc-metric{background:#fef9f0;border:1px solid #fad7a0;border-radius:7px;
+    padding:6px 12px;font-size:0.72rem;text-align:center;}
+  .rc-metric-val{font-size:1rem;font-weight:700;color:#c57a1a;}
+  .rc-metric-lbl{font-size:0.62rem;color:var(--sf-muted);text-transform:uppercase;margin-top:1px;}
+  .rc-components{font-size:0.68rem;color:var(--sf-muted);margin-top:6px;}
+
+  .dashboard{padding:24px 28px;max-width:1600px;margin:0 auto;}
+  .section-title{font-size:0.95rem;font-weight:700;color:var(--sf-dark);text-transform:uppercase;
+    letter-spacing:0.5px;margin:28px 0 14px;padding-bottom:6px;border-bottom:2px solid var(--sf-blue);
+    display:flex;align-items:center;gap:8px;}
+  .section-title::before{content:'';display:inline-block;width:4px;height:16px;background:var(--sf-blue);border-radius:2px;}
+
+  /* KPI — 7 columns */
+  .kpi-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:10px;}
+  .kpi-card{background:white;border-radius:10px;padding:16px 12px 12px;text-align:center;
+    box-shadow:0 2px 8px rgba(10,77,124,0.08);border-top:4px solid var(--sf-blue);transition:transform 0.15s;}
+  .kpi-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(10,77,124,0.14);}
+  .kpi-card.critical{border-top-color:var(--critical);}
+  .kpi-card.major-kpi{border-top-color:var(--major);}
+  .kpi-card.minor-kpi{border-top-color:var(--minor);}
+  .kpi-card.none-kpi{border-top-color:#adb5bd;}
+  .kpi-card.resolved-kpi{border-top-color:var(--resolved-green);}
+  .kpi-card.postmortem-card{border-top-color:var(--postmortem);}
+  .kpi-number{font-size:2rem;font-weight:800;color:var(--sf-dark);line-height:1;}
+  .kpi-card.critical .kpi-number{color:var(--critical);}
+  .kpi-card.major-kpi .kpi-number{color:var(--major);}
+  .kpi-card.minor-kpi .kpi-number{color:var(--minor);}
+  .kpi-card.none-kpi .kpi-number{color:#6c757d;}
+  .kpi-card.resolved-kpi .kpi-number{color:var(--resolved-green);}
+  .kpi-label{font-size:0.68rem;color:var(--sf-muted);text-transform:uppercase;font-weight:600;margin-top:5px;letter-spacing:0.5px;}
+  .kpi-sub{font-size:0.63rem;color:var(--sf-muted);margin-top:2px;}
+
+  .metric-legend{display:flex;gap:20px;flex-wrap:wrap;background:white;border-radius:10px;
+    padding:14px 18px;box-shadow:0 2px 8px rgba(10,77,124,0.07);border:1px solid var(--sf-border);
+    margin-bottom:4px;font-size:0.78rem;}
+  .metric-legend-item{display:flex;align-items:center;gap:8px;}
+  .metric-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+
+  .chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .chart-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:18px;}
+  .chart-card{background:white;border-radius:10px;padding:18px;
+    box-shadow:0 2px 8px rgba(10,77,124,0.07);border:1px solid var(--sf-border);}
+  .chart-card h3{font-size:0.82rem;font-weight:700;color:var(--sf-dark);margin-bottom:12px;
+    padding-bottom:8px;border-bottom:1px solid var(--sf-border);text-transform:uppercase;letter-spacing:0.4px;}
+  .chart-card .chart-subtitle{font-size:0.68rem;color:var(--sf-muted);margin-top:-8px;margin-bottom:10px;font-style:italic;}
+  .chart-container{position:relative;}
+  .chart-container.tall{height:320px;}
+  .chart-container.xtall{height:420px;}
+  .chart-container.doughnut{height:240px;}
+
+  /* ============================================================
+     TABLE FIX: Two-layer wrapper approach
+     Outer: overflow-x:auto  (horizontal scroll only)
+     Inner: overflow-y:auto + max-height  (vertical scroll only)
+     th: position:sticky; top:0 — works correctly because
+         the scrolling parent only scrolls in one axis
+  ============================================================ */
+  .table-card{background:white;border-radius:10px;padding:18px;
+    box-shadow:0 2px 8px rgba(10,77,124,0.07);border:1px solid var(--sf-border);}
+  .table-card h3{font-size:0.82rem;font-weight:700;color:var(--sf-dark);margin-bottom:4px;
+    padding-bottom:8px;border-bottom:1px solid var(--sf-border);text-transform:uppercase;letter-spacing:0.4px;}
+  .table-card .table-subtitle{font-size:0.68rem;color:var(--sf-muted);margin-bottom:10px;font-style:italic;}
+  .sort-hint{font-size:0.67rem;color:var(--sf-muted);margin-bottom:6px;font-style:italic;}
+
+  /* OUTER wrapper — horizontal scroll */
+  .table-outer{overflow-x:auto;border-radius:6px;}
+  /* INNER wrapper — vertical scroll */
+  .table-inner{overflow-y:auto;max-height:540px;}
+
+  table{width:100%;border-collapse:collapse;font-size:0.75rem;}
+
+  /* STICKY HEADERS — solid background required, high z-index */
+  th{
+    background:var(--sf-dark);
+    color:white;
+    padding:8px 10px;
+    text-align:left;
+    font-weight:600;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    /* KEY FIX: sticky works because parent only scrolls vertically */
+    position:sticky;
+    top:0;
+    z-index:10;
+    /* Prevent text overflow in header cells */
+    white-space:nowrap;
+    /* Solid bg prevents content showing through when scrolling */
+    background-clip:padding-box;
+    user-select:none;
+  }
+  th.sortable{cursor:pointer;padding-right:22px;position:relative;position:sticky;top:0;z-index:10;}
+  th.sortable:hover{background:#1a6ea8;}
+  th.sortable::after{content:'⇅';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.65rem;opacity:0.55;}
+  th.sort-asc::after{content:'▲';opacity:1;color:var(--sf-blue);}
+  th.sort-desc::after{content:'▼';opacity:1;color:var(--sf-blue);}
+  th.sort-asc,th.sort-desc{background:#0d5f99;}
+  th .th-sub{font-size:0.6rem;font-weight:400;opacity:0.75;display:block;margin-top:1px;}
+
+  /* Latest Update header — allow wrapping, set min-width */
+  th.col-update{
+    white-space:normal !important;
+    min-width:220px;
+    max-width:400px;
+    line-height:1.3;
+    vertical-align:middle;
+  }
+
+  td{padding:7px 10px;border-bottom:1px solid #eef3f8;vertical-align:top;line-height:1.5;}
+  tr:hover td{background:var(--sf-light);}
+  tr:nth-child(even) td{background:#fafcfe;}
+  tr:nth-child(even):hover td{background:var(--sf-light);}
+  tr.row-recently-resolved td{background:#fff8f0 !important;}
+  tr.row-recently-resolved:hover td{background:#fef0dc !important;}
+
+  .badge-impact{display:inline-block;padding:2px 8px;border-radius:10px;
+    font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
+  .badge-critical{background:#fde8ea;color:var(--critical);}
+  .badge-major{background:#fef3e7;color:#c57a1a;}
+  .badge-minor{background:#e8f5f3;color:var(--minor);}
+  .badge-none{background:#f0f1f3;color:#6c757d;}
+  .badge-status-pm{background:#e3f4fb;color:var(--sf-dark);}
+  .badge-status-res{background:#eaf7ee;color:#1a7a3a;}
+
+  .dur-cell{text-align:right;font-family:monospace;font-size:0.72rem;white-space:nowrap;}
+  .dur-high{color:var(--critical);font-weight:700;}
+  .dur-med{color:#c57a1a;font-weight:600;}
+  .dur-low{color:var(--minor);}
+  .dur-na{color:#adb5bd;font-style:italic;}
+
+  .update-body-wide{min-width:220px;max-width:400px;font-size:0.72rem;color:#334;line-height:1.55;white-space:normal;word-break:break-word;}
+  .update-body{max-width:280px;font-size:0.67rem;color:#445;line-height:1.5;white-space:normal;word-break:break-word;}
+  .component-cell{max-width:200px;font-size:0.67rem;color:#445;}
+  .region-cell{max-width:160px;font-size:0.67rem;color:#445;white-space:normal;word-break:break-word;}
+  .ts{white-space:nowrap;font-size:0.67rem;color:#445;}
+
+  footer{text-align:center;padding:18px;font-size:0.72rem;color:var(--sf-muted);
+    border-top:1px solid var(--sf-border);margin-top:32px;background:white;}
+
+  @media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(4,1fr);}.chart-grid-4{grid-template-columns:1fr 1fr;}}
+  @media(max-width:800px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.chart-grid-2,.chart-grid-4{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">❄</div>
+  <div class="title-block">
+    <h1>Snowflake Incident Intelligence Dashboard</h1>
+    <p>Service Incident Report &nbsp;|&nbsp; All timestamps in US Central Daylight Time (CDT = UTC−5) &nbsp;|&nbsp; Data as of August 24, 2026</p>
+  </div>
+  <div class="badge">50 Incidents</div>
+</header>
+
+<div class="clear-banner">
+  <span style="font-size:1.1rem">✅</span>
+  <div>
+    <strong>ALL SYSTEMS OPERATIONAL</strong> &nbsp;|&nbsp;
+    No active incidents &nbsp;|&nbsp;
+    Most recent: INC20000173 resolved Aug 24 2026 13:03 CDT (Major — US West (Oregon) - Applications) &nbsp;|&nbsp; RCA within 5 business days
+  </div>
+  <div class="clr-ts">Data as of Aug 24 2026</div>
+</div>
+
+<div class="dashboard">
+
+  <!-- Recently Resolved -->
+  <div class="section-title">✅ Most Recently Resolved Incident</div>
+  <div class="resolved-card">
+    <div class="rc-header">
+      <span class="badge-impact badge-status-res">✓ RESOLVED</span>
+      <span class="badge-impact badge-major">MAJOR</span>
+      <span class="rc-name">INC20000173</span>
+      <span style="font-family:monospace;font-size:0.68rem;color:var(--sf-muted)">ID: mhntf8gmn065</span>
+      <span class="rc-meta">Resolved: Aug 24 2026 13:03 CDT &nbsp;|&nbsp; 5 updates &nbsp;|&nbsp; RCA within 5 business days</span>
+    </div>
+    <div class="rc-body">
+      <strong>Final status:</strong> Current status: We&#x27;ve implemented the fix for this issue and monitored the environment to confirm that service was restored. If you experience additional issues or have questions, please open a support case via Snowflake Community or the Support page in Snowsight.<br><br>Customer experience: Customers hosted in the specified region may have been unable to remain logged in to Snowsight, experiencing immediate logout after successful authentication.<br><br>Incident start time: 14:47 UTC August 24, 2026<br>Incident end time: 17:21 UTC August 24, 2026<br><br>Preliminary root cause: A system configuration change caused an outdated application version to be deployed, resulting in authentication session failures. Once identified, the configuration was corrected to restore the proper application version.<br><br>A root cause analysis (RCA) will be conducted and a summary will be shared on the Snowflake status page within 5 business days.<br><br>
+      <strong>Customer experience:</strong> AWS - US West (Oregon) - Applications
+    </div>
+    <div class="rc-metrics">
+      <div class="rc-metric"><div class="rc-metric-val">2.57 hrs</div><div class="rc-metric-lbl">Duration</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">3.27 hrs</div><div class="rc-metric-lbl">Resolution</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">5</div><div class="rc-metric-lbl">Updates</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">AWS</div><div class="rc-metric-lbl">Platform</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">US West (Oregon) - Applications</div><div class="rc-metric-lbl">Region</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">Aug 24 2026 09:47 CDT</div><div class="rc-metric-lbl">Start</div></div>
+      <div class="rc-metric"><div class="rc-metric-val">Aug 24 2026 13:03 CDT</div><div class="rc-metric-lbl">Resolved</div></div>
+    </div>
+    <div class="rc-components">
+      <strong>Affected:</strong> AWS - US West (Oregon) - Applications &nbsp;|&nbsp;
+      <strong style="color:#c57a1a">⚠ RCA due within 5 business days</strong>
+    </div>
+  </div>
+
+  <!-- KPI — computed from data -->
+  <div class="section-title">Key Performance Indicators</div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- Distribution Charts -->
+  <div class="section-title">Incident Distribution</div>
+  <div class="chart-grid-4">
+    <div class="chart-card"><h3>🍩 By Impact Level</h3><div class="chart-container doughnut"><canvas id="chartImpact"></canvas></div></div>
+    <div class="chart-card"><h3>🥧 By Cloud Platform</h3><div class="chart-container doughnut"><canvas id="chartCloud"></canvas></div></div>
+    <div class="chart-card"><h3>🍩 By Incident Status</h3><div class="chart-container doughnut"><canvas id="chartStatus"></canvas></div></div>
+    <div class="chart-card"><h3>🔧 Affected Component Types</h3><div class="chart-container doughnut"><canvas id="chartComponents"></canvas></div></div>
+  </div>
+
+  <!-- Region + Weekly -->
+  <div class="section-title">Regional Distribution &amp; Weekly Trend</div>
+  <div class="chart-grid-2">
+    <div class="chart-card"><h3>📊 Incident Count by Cloud Region (Top 15)</h3><div class="chart-container tall"><canvas id="chartRegion"></canvas></div></div>
+    <div class="chart-card"><h3>📈 Weekly Incident Trend (Mar – Aug 2026)</h3><div class="chart-container tall"><canvas id="chartWeekly"></canvas></div></div>
+  </div>
+
+  <!-- Root Cause + Duration -->
+  <div class="section-title">Root Cause Categories &amp; Time Metrics</div>
+  <div class="metric-legend">
+    <div class="metric-legend-item"><div class="metric-dot" style="background:#29b5e8"></div><div><strong>Duration</strong> = end_time − start_time</div></div>
+    <div class="metric-legend-item"><div class="metric-dot" style="background:#0a4d7c"></div><div><strong>Resolution</strong> = incident_resolved − start_time</div></div>
+    <div class="metric-legend-item"><div class="metric-dot" style="background:#adb5bd"></div><div>INC0152681 excluded (~1,778 hrs)</div></div>
+  </div>
+  <div class="chart-grid-2" style="margin-top:14px;">
+    <div class="chart-card"><h3>🔍 Root Cause / Service Categories</h3><div class="chart-container tall"><canvas id="chartRootCause"></canvas></div></div>
+    <div class="chart-card">
+      <h3>⏱ Duration vs Resolution (Hours) — Top 20 by Resolution</h3>
+      <p class="chart-subtitle">Blue = Duration &nbsp;|&nbsp; Dark = Resolution &nbsp;|&nbsp; INC0152681 excluded</p>
+      <div class="chart-container xtall"><canvas id="chartDuration"></canvas></div>
+    </div>
+  </div>
+
+  <!--
+    US EAST TABLE
+    KEY FIX: table-outer (overflow-x:auto) wraps table-inner (overflow-y:auto)
+    This lets position:sticky on <th> work correctly for vertical scroll
+    while still allowing horizontal scroll for wide tables.
+  -->
+  <div class="section-title">US East Region Incidents</div>
+  <div class="table-card">
+    <h3>Incidents Affecting US East Regions</h3>
+    <p class="table-subtitle">AWS US East (N. Virginia) · AWS US East (Ohio) · AWS US East (Commercial Gov-Virginia) · Azure East US 2 (Virginia) · Azure East US (Virginia)</p>
+    <p class="sort-hint">💡 Click any column header to sort — click again to reverse &nbsp;|&nbsp; <strong>Latest Update</strong> appears immediately after Region(s)</p>
+    <div class="table-outer">
+      <div class="table-inner">
+        <table id="usEastTable">
+          <thead><tr>
+            <th class="sortable" data-field="idx"       data-type="num">#</th>
+            <th class="sortable" data-field="name"      data-type="str">Incident Name</th>
+            <th class="sortable" data-field="id"        data-type="str">Incident ID</th>
+            <th class="sortable" data-field="status"    data-type="str">Status</th>
+            <th class="sortable" data-field="impact"    data-type="impact">Impact</th>
+            <th class="sortable" data-field="region"    data-type="str">Region(s)</th>
+            <th class="col-update">Latest Update</th>
+            <th class="sortable" data-field="start"     data-type="ts">Start (CDT)</th>
+            <th class="sortable" data-field="end"       data-type="ts">End (CDT)</th>
+            <th class="sortable" data-field="resolved"  data-type="ts">Resolved (CDT)</th>
+            <th class="sortable" data-field="duration"  data-type="num">Duration (hrs)<span class="th-sub">end−start</span></th>
+            <th class="sortable" data-field="resolution" data-type="num">Resolution (hrs)<span class="th-sub">resolved−start</span></th>
+            <th>Affected Components</th>
+            <th>Component New Status</th>
+          </tr></thead>
+          <tbody id="usEastBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- All Incidents Table -->
+  <div class="section-title">Complete Incident Summary</div>
+  <div class="table-card">
+    <h3 id="allTableHeading">All 50 Incidents — One Row Per Incident — All Times CDT (UTC−5)</h3>
+    <p class="table-subtitle">Duration = end_time − start_time &nbsp;|&nbsp; Resolution = incident_resolved − start_time &nbsp;|&nbsp; 🟢 = recently resolved (Aug 20)</p>
+    <p class="sort-hint">💡 Click any column header to sort — click again to reverse</p>
+    <div class="table-outer">
+      <div class="table-inner">
+        <table id="allTable">
+          <thead><tr>
+            <th class="sortable" data-field="idx"        data-type="num">#</th>
+            <th class="sortable" data-field="name"       data-type="str">Incident Name</th>
+            <th class="sortable" data-field="id"         data-type="str">Incident ID</th>
+            <th class="sortable" data-field="status"     data-type="str">Status</th>
+            <th class="sortable" data-field="impact"     data-type="impact">Impact</th>
+            <th class="sortable" data-field="start"      data-type="ts">Start (CDT)</th>
+            <th class="sortable" data-field="end"        data-type="ts">End (CDT)</th>
+            <th class="sortable" data-field="resolved"   data-type="ts">Resolved (CDT)</th>
+            <th class="sortable" data-field="updated"    data-type="ts">Last Updated (CDT)</th>
+            <th class="sortable" data-field="updates"    data-type="num">Updates</th>
+            <th class="sortable" data-field="duration"   data-type="num">Duration (hrs)<span class="th-sub">end−start</span></th>
+            <th class="sortable" data-field="resolution" data-type="num">Resolution (hrs)<span class="th-sub">resolved−start</span></th>
+            <th class="sortable" data-field="platform"   data-type="str">Platform</th>
+            <th class="sortable" data-field="region"     data-type="str">Primary Region</th>
+            <th>Old Status</th>
+            <th>New Status</th>
+            <th>Latest Update Body</th>
+          </tr></thead>
+          <tbody id="allBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Snowflake Incident Intelligence Dashboard &nbsp;|&nbsp; Source: snowflake_incidents-08-24-2026-153937.xlsx &nbsp;|&nbsp; Generated August 24, 2026 &nbsp;|&nbsp; All times CDT (UTC−5)
+</footer>
+
+<script>
+const IMPACT_ORDER={critical:0,major:1,minor:2,none:3};
+
+function impactBadge(impact){
+  const cls={critical:'badge-critical',major:'badge-major',minor:'badge-minor',none:'badge-none'};
+  return`<span class="badge-impact ${cls[impact]||'badge-none'}">${impact.toUpperCase()}</span>`;
+}
+function statusBadge(s){
+  if(s==='postmortem') return`<span class="badge-impact badge-status-pm">POSTMORTEM</span>`;
+  return`<span class="badge-impact badge-status-res">✓ RESOLVED</span>`;
+}
+function hoursDiff(a,b){
+  if(!a||!b)return null;
+  const s=new Date(a),e=new Date(b);
+  if(isNaN(s)||isNaN(e))return null;
+  return(e-s)/3600000;
+}
+function fmtCDT(iso){
+  if(!iso||iso==='')return'—';
+  const d=new Date(iso);if(isNaN(d))return'—';
+  const c=new Date(d.getTime()-5*3600000);
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][c.getUTCMonth()];
+  return`${mo} ${c.getUTCDate()} ${c.getUTCFullYear()} ${String(c.getUTCHours()).padStart(2,'0')}:${String(c.getUTCMinutes()).padStart(2,'0')} CDT`;
+}
+function durCell(field,val,isRes){
+  if(val===null||val===undefined)
+    return`<td data-field="${field}" data-sort-val="999999" class="dur-cell dur-na">N/A</td>`;
+  const t1=isRes?24:10,t2=isRes?6:2;
+  const cls=val>=t1?'dur-high':val>=t2?'dur-med':'dur-low';
+  return`<td data-field="${field}" data-sort-val="${val.toFixed(4)}" class="dur-cell ${cls}">${val.toFixed(2)}</td>`;
+}
+function mkTd(field,text,sortVal,cls=''){
+  const sv=sortVal!==undefined?` data-sort-val="${sortVal}"`:'';
+  return`<td data-field="${field}"${sv} class="${cls}">${text}</td>`;
+}
+
+// ============================================================
+// SORT ENGINE — field-based, reads data-sort-val from each td
+// ============================================================
+function attachSort(tableId){
+  const table=document.getElementById(tableId);if(!table)return;
+  const headers=[...table.querySelectorAll('th.sortable')];
+  const tbody=table.querySelector('tbody');
+  let curField='',curDir=1;
+  headers.forEach(th=>{
+    th.addEventListener('click',()=>{
+      const field=th.dataset.field;
+      const type=th.dataset.type||'str';
+      curDir=(curField===field)?curDir*-1:1;
+      curField=field;
+      headers.forEach(h=>h.classList.remove('sort-asc','sort-desc'));
+      th.classList.add(curDir===1?'sort-asc':'sort-desc');
+      const rows=[...tbody.querySelectorAll('tr')];
+      rows.sort((a,b)=>{
+        const ca=a.querySelector(`td[data-field="${field}"]`);
+        const cb=b.querySelector(`td[data-field="${field}"]`);
+        if(!ca||!cb)return 0;
+        const sva=ca.dataset.sortVal, svb=cb.dataset.sortVal;
+        if(sva!==undefined&&svb!==undefined){
+          const fa=parseFloat(sva),fb=parseFloat(svb);
+          return(fa-fb)*curDir;
+        }
+        const ta=ca.textContent.trim().toLowerCase();
+        const tb=cb.textContent.trim().toLowerCase();
+        if(type==='impact')
+          return((IMPACT_ORDER[ta.split(' ')[0]]??99)-(IMPACT_ORDER[tb.split(' ')[0]]??99))*curDir;
+        return ta<tb?-curDir:ta>tb?curDir:0;
+      });
+      rows.forEach(r=>tbody.appendChild(r));
+    });
+  });
+}
+
+// ============================================================
+// DATA
+// ============================================================
+const incidents = [{"name": "INC20000173", "id": "mhntf8gmn065", "status": "resolved", "impact": "major", "flag": "recent", "startISO": "2026-08-24T14:47:00Z", "endISO": "2026-08-24T17:21:00Z", "resolvedISO": "2026-08-24T18:03:18.994000Z", "updatedISO": "2026-08-24T18:03:19.008000Z", "updates": 5, "platform": "AWS", "region": "US West (Oregon) - Applications", "component": "AWS - US West (Oregon) - Applications", "oldStatus": "partial_outage", "newStatus": "operational", "updateBody": "Current status: We've implemented the fix for this issue and monitored the environment to confirm that service was restored. If you experience additional issues or have questions, please open a support case via Snowflake Community or the Support page in Snowsight.\n\nCustomer experience: Customers hosted in the specified region may have been unable to remain logged in to Snowsight, experiencing immediate logout after successful authentication.\n\nIncident start time: 14:47 UTC August 24, 2026\nIncident end time: 17:21 UTC August 24, 2026\n\nPreliminary root cause: A system configuration change caused an outdated application version to be deployed, resulting in authentication session failures. Once identified, the configuration was corrected to restore the proper application version.\n\nA root cause analysis (RCA) will be conducted and a summary will be shared on the Snowflake status page within 5 business days."}, {"name": "INC20000168", "id": "n54hrszdq7h7", "status": "resolved", "impact": "major", "flag": "", "startISO": "2026-08-20T13:25:00Z", "endISO": "2026-08-20T14:10:00Z", "resolvedISO": "2026-08-20T15:43:18.985000Z", "updatedISO": "2026-08-20T15:43:19.001000Z", "updates": 4, "platform": "Azure", "region": "East US 2 (Virginia) - Security and Privacy Features", "component": "Azure - East US 2 (Virginia) - Security and Privacy Features", "oldStatus": "partial_outage", "newStatus": "operational", "updateBody": "Current status: The third-party cloud platform confirmed that the mitigation was complete, and its automated recovery system appears to have initiated. We independently monitored the environment and verified that service was restored. If you experience additional issues or have questions, please open a support case via Snowflake Community or the Support page in Snowsight.\n\nCustomer experience: Customers hosted in the specified regions may have been unable to connect to Snowflake via private connectivity solutions, such as PrivateLink. Other connection methods were unaffected.\n\nIncident start time: 13:25 UTC August 20, 2026\nIncident end time: 14:10 UTC August 20, 2026\n\nPreliminary root cause: A third-party cloud platform experienced a virtual networking infrastructure issue, preventing customers from connecting to Snowflake via private connectivity solutions, such as PrivateLink. While we suspect that this issue may be a recurrence of a third-party cloud platform virtual networking problem, we remain closely engaged with our third-party cloud platform as they perform their own investigation into the underlying root cause of the issue.\n\nA root cause analysis (RCA) will be conducted and a summary will be shared on the Snowflake status page within 10 business days."}, {"name": "INC20000163", "id": "yk5sqhcjp266", "status": "resolved", "impact": "major", "flag": "", "startISO": "2026-08-18T11:20:00Z", "endISO": "2026-08-18T13:45:00Z", "resolvedISO": "2026-08-18T14:51:45.803000Z", "updatedISO": "2026-08-18T14:51:45.821000Z", "updates": 4, "platform": "AWS", "region": "US East (N. Virginia) - AI and ML", "component": "AWS - US East (N. Virginia) - AI and ML", "oldStatus": "partial_outage", "newStatus": "operational", "updateBody": "Current status: We've implemented the fix for this issue and monitored the environment to confirm that service was restored. If you experience additional issues or have questions, please open a support case via Snowflake Community or the Support page in Snowsight.\n\nCustomer experience: Customers hosted in the specified regions may have experienced issues with AI and ML functionality. Specifically, when using Cortex Code in Snowsight, customers may have seen the following: “Internal Server error: You may need to start a new chat.” All other Snowflake features were not impacted.\n\nIncident start time: 11:20 UTC August 18, 2026\nIncident end time: 13:45 UTC August 18, 2026\n\nPreliminary root cause: Resource exhaustion in the compute infrastructure caused container scheduling failures, resulting in AI and ML functionality becoming unavailable.\n\nA root cause analysis (RCA) will be conducted and a summary will be shared on the Snowflake status page within 5 business days."}, {"name": "INC20000158", "id": "v8nyb5fhd95v", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-08-14T17:05:00Z", "endISO": "2026-08-14T18:12:00Z", "resolvedISO": "2026-08-14T19:35:34.064000Z", "updatedISO": "2026-08-21T21:47:41.817000Z", "updates": 5, "platform": "Azure", "region": "East US 2 (Virginia) - Applications", "component": "Azure - East US 2 (Virginia) - Applications", "oldStatus": "major_outage", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000158](https://community.snowflake.com/s/article/INC20000158)"}, {"name": "INC20000157", "id": "ylfhrtlppdlt", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-08-14T14:20:00Z", "endISO": "2026-08-14T14:45:00Z", "resolvedISO": "2026-08-14T16:28:44.337000Z", "updatedISO": "2026-08-22T02:38:37.034000Z", "updates": 3, "platform": "AWS", "region": "US East (Ohio) - Applications", "component": "AWS - US East (Ohio) - Applications", "oldStatus": "degraded_performance", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000157](https://community.snowflake.com/s/article/INC20000157)"}, {"name": "INC20000139", "id": "j7drswl3ssy7", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-08-05T11:40:00Z", "endISO": "2026-08-05T15:00:00Z", "resolvedISO": "2026-08-05T15:49:46.553000Z", "updatedISO": "2026-08-14T06:59:05.952000Z", "updates": 5, "platform": "AWS", "region": "US East (N. Virginia) - AI and ML", "component": "AWS - US East (N. Virginia) - AI and ML", "oldStatus": "degraded_performance", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000139](https://community.snowflake.com/s/article/INC20000139)"}, {"name": "INC20000129", "id": "xfv4kdj30rcb", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-08-03T13:33:00Z", "endISO": "2026-08-03T16:36:00Z", "resolvedISO": "2026-08-03T20:58:46.049000Z", "updatedISO": "2026-08-11T01:02:53.097000Z", "updates": 9, "platform": "AWS", "region": "US East (Ohio) - Virtual Warehouses", "component": "AWS - US East (Ohio) - Virtual Warehouses", "oldStatus": "major_outage", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000129](https://community.snowflake.com/s/article/INC20000129)."}, {"name": "INC20000128", "id": "ns7hfk8pbqfy", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-08-03T00:53:00Z", "endISO": "2026-08-03T06:15:00Z", "resolvedISO": "2026-08-03T08:15:16.831000Z", "updatedISO": "2026-08-11T02:01:21.052000Z", "updates": 6, "platform": "AWS", "region": "Asia Pacific (Tokyo) - Applications", "component": "AWS - Asia Pacific (Tokyo) - Applications", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000128](https://community.snowflake.com/s/article/INC20000128)"}, {"name": "INC20000115", "id": "0js22rxjm66q", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-07-30T00:18:00Z", "endISO": "2026-07-30T03:52:00Z", "resolvedISO": "2026-07-30T04:56:55.367000Z", "updatedISO": "2026-08-10T04:32:06.793000Z", "updates": 5, "platform": "AWS", "region": "US West (Oregon) - Applications", "component": "AWS - US West (Oregon) - Applications | AWS - Asia Pacific (Sydney) - Applications | AWS - Europe (Frankfurt) - Applications | AWS - Asia Pacific (Singapore) - Applications | Azure - Australia East (New South Wales) - Applications | AWS - Canada (Central) - Applications | Azure - Canada Central (Toronto) - Applications | Azure - Southeast Asia (Singapore) - Applications | AWS - US East (Ohio) - Applications | AWS - Asia Pacific (Tokyo) - Applications | AWS - Asia Pacific (Mumbai) - Applications | Azure - Switzerland North (Zürich) - Applications | AWS - Europe (London) - Applications | Azure - Central US (Iowa) - Applications | AWS - Asia Pacific (Seoul) - Applications | Azure - North Europe (Ireland) - Applications | Azure - Japan East (Tokyo, Saitama) - Applications | AWS - Europe (Stockholm) - Applications | Azure - UAE North (Dubai) - Applications | Azure - South Central US (Texas) - Applications | AWS - Asia Pacific (Osaka) - Applications | AWS - South America (São Paulo) - Applications | AWS - Europe (Paris) - Applications | AWS - Asia Pacific (Jakarta) - Applications | AWS - Europe (Zürich) - Applications | Azure - Mexico (Central) - Applications | Azure - Central Korea (Seoul) - Applications | AWS - Africa (Cape Town) - Applications | Azure - Sweden Central (Gävle) - Applications | AWS - Asia Pacific (Malaysia) - Applications | AWS - Asia Pacific (Thailand) - Applications | AWS - Asia Pacific (New Zealand) - Applications", "oldStatus": "major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000115](https://community.snowflake.com/s/article/INC20000115)"}, {"name": "INC20000106", "id": "0yt2v05n42gz", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-07-25T07:45:00Z", "endISO": "2026-07-25T15:05:00Z", "resolvedISO": "2026-07-25T16:01:31.127000Z", "updatedISO": "2026-07-31T20:38:42.660000Z", "updates": 8, "platform": "Azure", "region": "Central US (Iowa) - Databases, Tables, and Views", "component": "Azure - Central US (Iowa) - Databases, Tables, and Views | Azure - Central US (Iowa) - Virtual Warehouses", "oldStatus": "degraded_performance | degraded_performance", "newStatus": "operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000106](https://community.snowflake.com/s/article/INC20000106)"}, {"name": "INC20000085", "id": "46l87jjm2m5f", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-07-11T16:35:00Z", "endISO": "2026-07-11T18:10:00Z", "resolvedISO": "2026-07-11T19:36:26.204000Z", "updatedISO": "2026-07-18T01:43:04.779000Z", "updates": 4, "platform": "AWS", "region": "US West (Oregon) - Virtual Warehouses", "component": "AWS - US West (Oregon) - Virtual Warehouses", "oldStatus": "degraded_performance", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000085](https://community.snowflake.com/s/article/INC20000085)"}, {"name": "INC20000082", "id": "kw59fjhlv3jq", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-07-10T13:26:00Z", "endISO": "2026-07-10T14:33:00Z", "resolvedISO": "2026-07-10T16:28:21.429000Z", "updatedISO": "2026-07-18T01:03:55.800000Z", "updates": 5, "platform": "Azure", "region": "East US 2 (Virginia) - Applications", "component": "Azure - East US 2 (Virginia) - Applications | Azure - East US 2 (Virginia) - Security and Privacy Features", "oldStatus": "partial_outage | partial_outage", "newStatus": "operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000082](https://community.snowflake.com/s/article/INC20000082)"}, {"name": "INC20000063", "id": "rqkrpr2hf7f7", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-06-30T21:47:00Z", "endISO": "2026-06-30T22:03:00Z", "resolvedISO": "2026-06-30T23:34:16.098000Z", "updatedISO": "2026-07-08T23:15:30.468000Z", "updates": 4, "platform": "AWS", "region": "US West (Oregon) - Applications", "component": "AWS - US West (Oregon) - Applications", "oldStatus": "major_outage", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000063](https://community.snowflake.com/s/article/INC20000063)"}, {"name": "INC20000052", "id": "w9qjc26y18rn", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-06-24T15:10:00Z", "endISO": "2026-06-24T15:50:00Z", "resolvedISO": "2026-06-24T17:22:59.412000Z", "updatedISO": "2026-07-02T17:01:53.493000Z", "updates": 5, "platform": "AWS", "region": "US East (N. Virginia) - Databases, Tables, and Views", "component": "AWS - US East (N. Virginia) - Databases, Tables, and Views | AWS - US East (N. Virginia) - Virtual Warehouses | AWS - US East (N. Virginia) - Data Loading and Unloading | AWS - US East (N. Virginia) - Applications", "oldStatus": "major_outage | major_outage | major_outage | major_outage", "newStatus": "operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/inc20000052](https://community.snowflake.com/s/article/inc20000052)"}, {"name": "INC20000047", "id": "j3xz9wrt22vp", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-06-23T15:20:00Z", "endISO": "2026-06-24T05:10:00Z", "resolvedISO": "2026-06-24T07:30:58.034000Z", "updatedISO": "2026-07-02T22:00:13.510000Z", "updates": 10, "platform": "AWS", "region": "US West (Oregon) - Applications", "component": "AWS - US West (Oregon) - Applications | AWS - US West (Oregon) - Snowpark Container Services", "oldStatus": "partial_outage | partial_outage", "newStatus": "operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000047](https://community.snowflake.com/s/article/INC20000047)"}, {"name": "INC20000046", "id": "0nxtj28g9ycc", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-06-22T22:38:00Z", "endISO": "2026-06-23T01:28:00Z", "resolvedISO": "2026-06-23T02:35:33Z", "updatedISO": "2026-07-02T21:48:22.658000Z", "updates": 4, "platform": "AWS", "region": "Europe (London) - Applications", "component": "AWS - Europe (London) - Applications | AWS - Europe (London) - Snowpark Container Services", "oldStatus": "operational | operational", "newStatus": "operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000046](https://community.snowflake.com/s/article/INC20000046)"}, {"name": "AWS - US West (Oregon): INC0159680", "id": "zn8xxp2qzpr1", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-06-22T20:12:00Z", "endISO": "2026-06-22T21:45:00Z", "resolvedISO": "2026-06-23T00:26:09.087000Z", "updatedISO": "2026-06-30T19:17:10.771000Z", "updates": 7, "platform": "AWS", "region": "US West (Oregon) - Databases, Tables, and Views", "component": "AWS - US West (Oregon) - Databases, Tables, and Views | AWS - US West (Oregon) - Data Loading and Unloading", "oldStatus": "operational | operational", "newStatus": "operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0159680](https://community.snowflake.com/s/article/INC0159680)"}, {"name": "INC0159144", "id": "dt63jcq37152", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-06-16T00:03:00Z", "endISO": "2026-06-16T17:29:00Z", "resolvedISO": "2026-06-16T20:20:49.373000Z", "updatedISO": "2026-06-24T21:58:57.220000Z", "updates": 7, "platform": "AWS", "region": "US West (Oregon) - Applications", "component": "AWS - US West (Oregon) - Applications | AWS - US East (N. Virginia) - Applications | Azure - East US 2 (Virginia) - Applications | Azure - West Europe (Netherlands) - Applications | AWS - Asia Pacific (Sydney) - Applications | AWS - Europe (Frankfurt) - Applications | AWS - Europe (Ireland) - Applications | AWS - Asia Pacific (Singapore) - Applications | Azure - Australia East (New South Wales) - Applications | Azure - US Gov (Virginia) - Applications | AWS - Canada (Central) - Applications | Azure - Canada Central (Toronto) - Applications | Azure - Southeast Asia (Singapore) - Applications | AWS - US East (Ohio) - Applications | AWS - Asia Pacific (Tokyo) - Applications | Azure - West US 2 (Washington) - Applications | GCP - US Central 1 (Iowa) - Applications | GCP - Europe West 4 (Eemshaven) - Applications | AWS - Asia Pacific (Mumbai) - Applications | Azure - Switzerland North (Zürich) - Applications | GCP - Europe West 2 (London) - Applications | AWS - Europe (London) - Applications | Azure - Central US (Iowa) - Applications | AWS - Asia Pacific (Seoul) - Applications | Azure - North Europe (Ireland) - Applications | AWS - GovCloud (US-West) - Applications | Azure - Japan East (Tokyo, Saitama) - Applications | AWS - Europe (Stockholm) - Applications | AWS - US East (Commercial Gov-Virginia) - Applications | Azure - UAE North (Dubai) - Applications | Azure - South Central US (Texas) - Applications | Azure - Central India (Pune) - Applications | AWS - Asia Pacific (Osaka) - Applications | GCP - US East 4 (N. Virginia) - Applications | AWS - South America (São Paulo) - Applications | Azure - UK South (London) - Applications | AWS - Europe (Paris) - Applications | AWS - Asia Pacific (Jakarta) - Applications | AWS - Europe (Zürich) - Applications | AWS GovCloud - DoD - Applications | GCP - Europe West 3 (Frankfurt) - Applications | GCP - Middle East (Dammam) - Applications | Azure - Mexico (Central) - Applications | AWS - US West (Commercial Gov - Oregon) - Applications | Azure - Central Korea (Seoul) - Applications | AWS - Africa (Cape Town) - Applications | Azure - Sweden Central (Gävle) - Applications | GCP - Australia Southeast 2 (Melbourne) - Applications | Azure - East US (Virginia) - Applications | AWS - GovCloud (US-East) - Applications | AWS - Asia Pacific (Malaysia) - Applications | AWS - Asia Pacific (Thailand) - Applications | AWS - Asia Pacific (New Zealand) - Applications", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0159144](https://community.snowflake.com/s/article/INC0159144)"}, {"name": "INC20000034", "id": "x9085gh79r3x", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-06-15T14:15:00Z", "endISO": "2026-06-15T21:45:00Z", "resolvedISO": "2026-06-16T21:15:16.509000Z", "updatedISO": "2026-07-02T21:59:09.157000Z", "updates": 9, "platform": "Azure", "region": "East US 2 (Virginia) - Applications", "component": "Azure - East US 2 (Virginia) - Applications", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000034](https://community.snowflake.com/s/article/INC20000034)"}, {"name": "INC20000033", "id": "g4d0vxhf0tns", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-06-12T15:10:00Z", "endISO": "2026-06-12T19:15:00Z", "resolvedISO": "2026-06-12T20:57:13.969000Z", "updatedISO": "2026-06-22T22:22:57.765000Z", "updates": 5, "platform": "Azure", "region": "East US 2 (Virginia) - Developer Tools", "component": "Azure - East US 2 (Virginia) - Developer Tools", "oldStatus": "degraded_performance", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000033](https://community.snowflake.com/s/article/INC20000033)"}, {"name": "INC20000032", "id": "980k6ghp4qwb", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-06-10T23:23:00Z", "endISO": "2026-06-10T23:58:00Z", "resolvedISO": "2026-06-11T00:30:45Z", "updatedISO": "2026-06-18T04:00:05.941000Z", "updates": 2, "platform": "Azure", "region": "East US (Virginia) - Applications", "component": "Azure - East US (Virginia) - Applications", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC20000032](https://community.snowflake.com/s/article/INC20000032)"}, {"name": "INC20000030", "id": "655fr2b9cl57", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-06-08T14:58:00Z", "endISO": "2026-06-08T15:20:00Z", "resolvedISO": "2026-06-08T16:40:37.302000Z", "updatedISO": "2026-06-16T02:07:43.694000Z", "updates": 4, "platform": "Azure", "region": "East US 2 (Virginia) - Applications", "component": "Azure - East US 2 (Virginia) - Applications", "oldStatus": "major_outage", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site:  \n[https://community.snowflake.com/s/article/INC20000030](https://community.snowflake.com/s/article/INC20000030)"}, {"name": "Azure - West US 2 (Washington): INC0157956", "id": "4w8gm09dsr8p", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-05-29T04:24:00Z", "endISO": "2026-05-29T07:24:00Z", "resolvedISO": "2026-05-29T22:28:54.800000Z", "updatedISO": "2026-06-12T09:39:18.056000Z", "updates": 7, "platform": "Azure", "region": "West US 2 (Washington) - Virtual Warehouses", "component": "Azure - West US 2 (Washington) - Virtual Warehouses", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0157956](https://community.snowflake.com/s/article/INC0157956)"}, {"name": "INC0157230", "id": "mkbgc4vgdhdb", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-05-14T22:50:00Z", "endISO": "2026-05-15T04:05:00Z", "resolvedISO": "2026-05-15T05:25:07.220000Z", "updatedISO": "2026-05-22T00:26:25.296000Z", "updates": 4, "platform": "AWS", "region": "US West (Oregon) - AI and ML", "component": "AWS - US West (Oregon) - AI and ML | AWS - Asia Pacific (Sydney) - AI and ML | Azure - Australia East (New South Wales) - AI and ML | AWS - Asia Pacific (Tokyo) - AI and ML", "oldStatus": "operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0157230](https://community.snowflake.com/s/article/INC0157230)"}, {"name": "INC0157155", "id": "mz5w4kshds0w", "status": "resolved", "impact": "none", "flag": "", "startISO": null, "endISO": null, "resolvedISO": "2026-05-14T00:19:53Z", "updatedISO": "2026-05-14T00:25:33.361000Z", "updates": 3, "platform": "AWS", "region": "US East (N. Virginia) - Business Continuity", "component": "AWS - US East (N. Virginia) - Business Continuity | Azure - West Europe (Netherlands) - Business Continuity | AWS - Asia Pacific (Sydney) - Business Continuity | AWS - Asia Pacific (Singapore) - Business Continuity | Azure - Australia East (New South Wales) - Business Continuity | AWS - Canada (Central) - Business Continuity | Azure - Canada Central (Toronto) - Business Continuity | Azure - Southeast Asia (Singapore) - Business Continuity | AWS - Asia Pacific (Tokyo) - Business Continuity | GCP - Europe West 4 (Eemshaven) - Business Continuity | AWS - Asia Pacific (Mumbai) - Business Continuity | Azure - Switzerland North (Zürich) - Business Continuity | GCP - Europe West 2 (London) - Business Continuity | Azure - Central US (Iowa) - Business Continuity | AWS - Asia Pacific (Seoul) - Business Continuity | Azure - Japan East (Tokyo, Saitama) - Business Continuity | AWS - Europe (Stockholm) - Business Continuity | Azure - UAE North (Dubai) - Business Continuity | Azure - South Central US (Texas) - Business Continuity | Azure - Central India (Pune) - Business Continuity | AWS - Asia Pacific (Osaka) - Business Continuity | GCP - US East 4 (N. Virginia) - Business Continuity | AWS - South America (São Paulo) - Business Continuity | AWS - Europe (Paris) - Business Continuity | AWS - Asia Pacific (Jakarta) - Business Continuity | AWS - Europe (Zürich) - Business Continuity | GCP - Middle East (Dammam) - Business Continuity | Azure - Mexico (Central) - Business Continuity | AWS - US West (Commercial Gov - Oregon) - Business Continuity | Azure - Central Korea (Seoul) - Business Continuity | AWS - Africa (Cape Town) - Business Continuity | Azure - Sweden Central (Gävle) - Business Continuity | GCP - Australia Southeast 2 (Melbourne) - Business Continuity | Azure - East US (Virginia) - Business Continuity | AWS - Asia Pacific (Malaysia) - Business Continuity | AWS - Asia Pacific (Thailand) - Business Continuity", "oldStatus": "partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage | partial_outage", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "<b>Current status:</b> After investigating, we've determined this to be a false positive. There were no customer replication refresh operations impacted. We've confirmed replication services are functioning normally. If you experience issues or have questions, please open a support case via Snowflake Community or the Support page in Snowsight."}, {"name": "Azure - West US 2 (Washington): INC0156645", "id": "z2h7mnkrxdxh", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-05-04T12:03:00Z", "endISO": "2026-05-05T08:54:00Z", "resolvedISO": "2026-05-05T12:30:00.285000Z", "updatedISO": "2026-05-13T00:16:53.929000Z", "updates": 7, "platform": "Azure", "region": "West US 2 (Washington) - Organization and Account Management", "component": "Azure - West US 2 (Washington) - Organization and Account Management", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0156645](https://community.snowflake.com/s/article/INC0156645)"}, {"name": "Azure - UK South (London): INC0156355", "id": "3g6k24d9ws1k", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-04-29T02:05:00Z", "endISO": "2026-04-29T04:11:00Z", "resolvedISO": "2026-04-29T04:44:46Z", "updatedISO": "2026-05-07T02:26:54.803000Z", "updates": 5, "platform": "Azure", "region": "UK South (London) - Snowpark Container Services", "component": "Azure - UK South (London) - Snowpark Container Services", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0156355](https://community.snowflake.com/s/article/INC0156355)"}, {"name": "GCP - US Central 1 (Iowa): INC0155608", "id": "0lj68wp0lphb", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-04-16T12:25:00Z", "endISO": "2026-04-16T13:45:00Z", "resolvedISO": "2026-04-16T15:08:37.502000Z", "updatedISO": "2026-04-23T22:14:43.826000Z", "updates": 3, "platform": "GCP", "region": "US Central 1 (Iowa) - Applications", "component": "GCP - US Central 1 (Iowa) - Applications", "oldStatus": "partial_outage", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0155608](https://community.snowflake.com/s/article/INC0155608)"}, {"name": "Azure - East US 2 (Virginia): INC0155020", "id": "g47n1w0d9v90", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-04-07T17:47:00Z", "endISO": "2026-04-07T19:45:00Z", "resolvedISO": "2026-04-07T20:56:12.213000Z", "updatedISO": "2026-04-15T00:32:54.943000Z", "updates": 5, "platform": "Azure", "region": "East US 2 (Virginia) - Databases, Tables, and Views", "component": "Azure - East US 2 (Virginia) - Databases, Tables, and Views | Azure - East US 2 (Virginia) - Virtual Warehouses | Azure - East US 2 (Virginia) - Data Loading and Unloading | Azure - East US 2 (Virginia) - Applications", "oldStatus": "operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0155020](https://community.snowflake.com/s/article/INC0155020)"}, {"name": "INC0154408", "id": "xj5gygqqc5w8", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-03-27T00:00:00Z", "endISO": "2026-03-29T05:55:00Z", "resolvedISO": "2026-03-30T21:38:03.110000Z", "updatedISO": "2026-04-06T18:35:35.162000Z", "updates": 5, "platform": "AWS", "region": "US West (Oregon) - Developer Tools", "component": "AWS - US West (Oregon) - Developer Tools | AWS - US East (N. Virginia) - Developer Tools | Azure - East US 2 (Virginia) - Developer Tools | Azure - West Europe (Netherlands) - Developer Tools | AWS - Asia Pacific (Sydney) - Developer Tools | AWS - Europe (Frankfurt) - Developer Tools | AWS - Europe (Ireland) - Developer Tools | AWS - Asia Pacific (Singapore) - Developer Tools | Azure - Australia East (New South Wales) - Developer Tools | Azure - US Gov (Virginia) - Developer Tools | AWS - Canada (Central) - Developer Tools | Azure - Canada Central (Toronto) - Developer Tools | Azure - Southeast Asia (Singapore) - Developer Tools | AWS - US East (Ohio) - Developer Tools | AWS - Asia Pacific (Tokyo) - Developer Tools | Azure - West US 2 (Washington) - Developer Tools | GCP - US Central 1 (Iowa) - Developer Tools | GCP - Europe West 4 (Eemshaven) - Developer Tools | AWS - Asia Pacific (Mumbai) - Developer Tools | Azure - Switzerland North (Zürich) - Developer Tools | GCP - Europe West 2 (London) - Developer Tools | AWS - Europe (London) - Developer Tools | Azure - Central US (Iowa) - Developer Tools | AWS - Asia Pacific (Seoul) - Developer Tools | Azure - North Europe (Ireland) - Developer Tools | AWS - GovCloud (US-West) - Developer Tools | Azure - Japan East (Tokyo, Saitama) - Developer Tools | AWS - Europe (Stockholm) - Developer Tools | AWS - US East (Commercial Gov-Virginia) - Developer Tools | Azure - UAE North (Dubai) - Developer Tools | Azure - South Central US (Texas) - Developer Tools | Azure - Central India (Pune) - Developer Tools | AWS - Asia Pacific (Osaka) - Developer Tools | GCP - US East 4 (N. Virginia) - Developer Tools | AWS - South America (São Paulo) - Developer Tools | Azure - UK South (London) - Developer Tools | AWS - Europe (Paris) - Developer Tools | AWS - Asia Pacific (Jakarta) - Developer Tools | AWS - Europe (Zürich) - Developer Tools | AWS GovCloud - DoD - Developer Tools | GCP - Europe West 3 (Frankfurt) - Developer Tools | GCP - Middle East (Dammam) - Developer Tools | Azure - Mexico (Central) - Developer Tools | AWS - US West (Commercial Gov - Oregon) - Developer Tools | Azure - Central Korea (Seoul) - Developer Tools | AWS - Africa (Cape Town) - Developer Tools | Azure - Sweden Central (Gävle) - Developer Tools | GCP - Australia Southeast 2 (Melbourne) - Developer Tools | AWS - Middle East (UAE) - Developer Tools | Azure - East US (Virginia) - Developer Tools | AWS - GovCloud (US-East) - Developer Tools", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | degraded_performance | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | degraded_performance | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0154408](https://community.snowflake.com/s/article/INC0154408)"}, {"name": "AWS - US West (Oregon): INC0154019", "id": "p3x136d3mcsp", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-03-21T05:27:00Z", "endISO": "2026-03-21T06:18:00Z", "resolvedISO": "2026-03-21T07:12:20Z", "updatedISO": "2026-03-27T23:20:09.581000Z", "updates": 5, "platform": "AWS", "region": "US West (Oregon) - Databases, Tables, and Views", "component": "AWS - US West (Oregon) - Databases, Tables, and Views | AWS - US West (Oregon) - Virtual Warehouses | AWS - US West (Oregon) - Data Loading and Unloading | AWS - US West (Oregon) - Applications | AWS - US West (Oregon) - Snowpark Container Services | AWS - US West (Oregon) - Security and Privacy Features | AWS - US West (Oregon) - AI and ML | AWS - US West (Oregon) - Organization and Account Management | AWS - US West (Oregon) - Listings and Collaboration | AWS - US West (Oregon) - Alerts and Notifications | AWS - US West (Oregon) - Developer Tools | AWS - US West (Oregon) - Business Continuity", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0154019](https://community.snowflake.com/s/article/INC0154019)"}, {"name": "INC0153706", "id": "cy1j8q1htyy9", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-03-14T14:53:00Z", "endISO": "2026-03-17T04:39:00Z", "resolvedISO": "2026-03-17T05:49:50Z", "updatedISO": "2026-03-25T00:01:01.225000Z", "updates": 5, "platform": "AWS", "region": "US West (Oregon) - Alerts and Notifications", "component": "AWS - US West (Oregon) - Alerts and Notifications | AWS - US East (N. Virginia) - Alerts and Notifications | Azure - East US 2 (Virginia) - Alerts and Notifications | AWS - Asia Pacific (Singapore) - Alerts and Notifications | Azure - Australia East (New South Wales) - Alerts and Notifications | Azure - Canada Central (Toronto) - Alerts and Notifications | GCP - Europe West 4 (Eemshaven) - Alerts and Notifications | AWS - Asia Pacific (Mumbai) - Alerts and Notifications | Azure - Switzerland North (Zürich) - Alerts and Notifications | GCP - Europe West 2 (London) - Alerts and Notifications | AWS - Asia Pacific (Seoul) - Alerts and Notifications | Azure - Japan East (Tokyo, Saitama) - Alerts and Notifications | AWS - Europe (Stockholm) - Alerts and Notifications | AWS - US East (Commercial Gov-Virginia) - Alerts and Notifications | Azure - UAE North (Dubai) - Alerts and Notifications | Azure - South Central US (Texas) - Alerts and Notifications | Azure - Central India (Pune) - Alerts and Notifications | AWS - Asia Pacific (Osaka) - Alerts and Notifications | AWS - South America (São Paulo) - Alerts and Notifications | Azure - UK South (London) - Alerts and Notifications | AWS - Europe (Paris) - Alerts and Notifications | AWS - Asia Pacific (Jakarta) - Alerts and Notifications | AWS - Europe (Zürich) - Alerts and Notifications | GCP - Europe West 3 (Frankfurt) - Alerts and Notifications | GCP - Middle East (Dammam) - Alerts and Notifications | Azure - Mexico (Central) - Alerts and Notifications | AWS - US West (Commercial Gov - Oregon) - Alerts and Notifications | Azure - Central Korea (Seoul) - Alerts and Notifications | Azure - Sweden Central (Gävle) - Alerts and Notifications | GCP - Australia Southeast 2 (Melbourne) - Alerts and Notifications | AWS - Middle East (UAE) - Alerts and Notifications | Azure - East US (Virginia) - Alerts and Notifications", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0153706](https://community.snowflake.com/s/article/INC0153706)"}, {"name": "INC0153465", "id": "kpkc19wpf1m0", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-03-12T16:30:00Z", "endISO": "2026-03-12T20:39:00Z", "resolvedISO": "2026-03-12T23:13:03.275000Z", "updatedISO": "2026-03-19T21:28:24.086000Z", "updates": 5, "platform": "AWS", "region": "US West (Oregon) - AI and ML", "component": "AWS - US West (Oregon) - AI and ML | AWS - US East (N. Virginia) - AI and ML | Azure - East US 2 (Virginia) - AI and ML | Azure - West Europe (Netherlands) - AI and ML | AWS - Asia Pacific (Sydney) - AI and ML | AWS - Europe (Frankfurt) - AI and ML | AWS - Europe (Ireland) - AI and ML | AWS - Asia Pacific (Singapore) - AI and ML | Azure - Australia East (New South Wales) - AI and ML | AWS - Canada (Central) - AI and ML | Azure - Canada Central (Toronto) - AI and ML | Azure - Southeast Asia (Singapore) - AI and ML | AWS - US East (Ohio) - AI and ML | AWS - Asia Pacific (Tokyo) - AI and ML | Azure - West US 2 (Washington) - AI and ML | GCP - US Central 1 (Iowa) - AI and ML | GCP - Europe West 4 (Eemshaven) - AI and ML | AWS - Asia Pacific (Mumbai) - AI and ML | Azure - Switzerland North (Zürich) - AI and ML | GCP - Europe West 2 (London) - AI and ML | AWS - Europe (London) - AI and ML | Azure - Central US (Iowa) - AI and ML | AWS - Asia Pacific (Seoul) - AI and ML | Azure - North Europe (Ireland) - AI and ML | Azure - Japan East (Tokyo, Saitama) - AI and ML | AWS - Europe (Stockholm) - AI and ML | Azure - UAE North (Dubai) - AI and ML | Azure - South Central US (Texas) - AI and ML | Azure - Central India (Pune) - AI and ML | AWS - Asia Pacific (Osaka) - AI and ML | GCP - US East 4 (N. Virginia) - AI and ML | AWS - South America (São Paulo) - AI and ML | Azure - UK South (London) - AI and ML | AWS - Europe (Paris) - AI and ML | AWS - Asia Pacific (Jakarta) - AI and ML | AWS - Europe (Zürich) - AI and ML | GCP - Europe West 3 (Frankfurt) - AI and ML | GCP - Middle East (Dammam) - AI and ML | Azure - Mexico (Central) - AI and ML | Azure - Central Korea (Seoul) - AI and ML | AWS - Africa (Cape Town) - AI and ML | Azure - Sweden Central (Gävle) - AI and ML | GCP - Australia Southeast 2 (Melbourne) - AI and ML | AWS - Middle East (UAE) - AI and ML | Azure - East US (Virginia) - AI and ML", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0153465](https://community.snowflake.com/s/article/INC0153465)"}, {"name": "AWS - Europe (Zürich): INC0153183", "id": "6ghqh8nfw4wc", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-03-07T19:30:00Z", "endISO": "2026-03-07T21:10:00Z", "resolvedISO": "2026-03-07T22:20:05.956000Z", "updatedISO": "2026-03-20T21:40:58.655000Z", "updates": 5, "platform": "AWS", "region": "Europe (Zürich) - Databases, Tables, and Views", "component": "AWS - Europe (Zürich) - Databases, Tables, and Views | AWS - Europe (Zürich) - Virtual Warehouses | AWS - Europe (Zürich) - Data Loading and Unloading | AWS - Europe (Zürich) - Applications | AWS - Europe (Zürich) - Snowpark Container Services | AWS - Europe (Zürich) - Security and Privacy Features | AWS - Europe (Zürich) - AI and ML | AWS - Europe (Zürich) - Organization and Account Management | AWS - Europe (Zürich) - Listings and Collaboration | AWS - Europe (Zürich) - Alerts and Notifications | AWS - Europe (Zürich) - Developer Tools | AWS - Europe (Zürich) - Business Continuity | AWS - Europe (Zürich) - Snowflake Postgres", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0153183](https://community.snowflake.com/s/article/INC0153183)"}, {"name": "AWS - Middle East (UAE): INC0152681", "id": "rby2mg3mxmvp", "status": "resolved", "impact": "critical", "flag": "", "startISO": "2026-03-01T12:25:00Z", "endISO": null, "resolvedISO": "2026-05-15T15:10:37.408000Z", "updatedISO": "2026-05-15T15:10:37.430000Z", "updates": 12, "platform": "AWS", "region": "Middle East (UAE) - Databases, Tables, and Views", "component": "AWS - Middle East (UAE) - Databases, Tables, and Views | AWS - Middle East (UAE) - Virtual Warehouses | AWS - Middle East (UAE) - Data Loading and Unloading | AWS - Middle East (UAE) - Applications | AWS - Middle East (UAE) - Snowpark Container Services | AWS - Middle East (UAE) - Security and Privacy Features | AWS - Middle East (UAE) - AI and ML | AWS - Middle East (UAE) - Organization and Account Management | AWS - Middle East (UAE) - Listings and Collaboration | AWS - Middle East (UAE) - Alerts and Notifications | AWS - Middle East (UAE) - Developer Tools | AWS - Middle East (UAE) - Business Continuity", "oldStatus": "major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage", "newStatus": "major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage | major_outage", "updateBody": "To ensure the best possible service for our customers amid the persistent issues in the AWS Middle East (UAE) region and following the cloud service provider’s advice to transition workloads to other regions, we have decided to remove this region from our available listings until further notice."}, {"name": "Azure - Canada Central (Toronto): INC0152309", "id": "8mj6n9xzhc96", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2026-02-23T19:26:00Z", "endISO": "2026-02-23T21:11:00Z", "resolvedISO": "2026-02-23T22:07:16.950000Z", "updatedISO": "2026-03-02T22:46:44.708000Z", "updates": 4, "platform": "Azure", "region": "Canada Central (Toronto) - Applications", "component": "Azure - Canada Central (Toronto) - Applications | Azure - Canada Central (Toronto) - Snowpark Container Services", "oldStatus": "operational | operational", "newStatus": "operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0152309](https://community.snowflake.com/s/article/INC0152309)"}, {"name": "Azure - Central US (Iowa): INC0150687", "id": "r32lgfpkzw0y", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-01-27T17:51:00Z", "endISO": "2026-01-27T18:25:00Z", "resolvedISO": "2026-01-27T19:30:39.361000Z", "updatedISO": "2026-02-04T03:40:43.641000Z", "updates": 4, "platform": "Azure", "region": "Central US (Iowa) - Databases, Tables, and Views", "component": "Azure - Central US (Iowa) - Databases, Tables, and Views | Azure - Central US (Iowa) - Data Loading and Unloading", "oldStatus": "operational | operational", "newStatus": "operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0150687](https://community.snowflake.com/s/article/INC0150687)"}, {"name": "AWS - US West (Oregon): INC0150440", "id": "0w11t7x10rzg", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-01-22T19:02:00Z", "endISO": "2026-01-22T19:30:00Z", "resolvedISO": "2026-01-22T23:24:05Z", "updatedISO": "2026-01-29T01:46:31.115000Z", "updates": 5, "platform": "AWS", "region": "US West (Oregon) - Applications", "component": "AWS - US West (Oregon) - Applications", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0150359-and-INC0150440](https://community.snowflake.com/s/article/INC0150359-and-INC0150440)"}, {"name": "AWS - US West (Oregon): INC0150359", "id": "s2j1bnnjshl4", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-01-21T19:00:00Z", "endISO": "2026-01-21T20:08:00Z", "resolvedISO": "2026-01-21T21:57:57.193000Z", "updatedISO": "2026-01-29T01:46:53.050000Z", "updates": 7, "platform": "AWS", "region": "US West (Oregon) - Applications", "component": "AWS - US West (Oregon) - Applications", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0150359-and-INC0150440](https://community.snowflake.com/s/article/INC0150359-and-INC0150440)"}, {"name": "INC0149526", "id": "zkz78zszy9wc", "status": "postmortem", "impact": "major", "flag": "", "startISO": "2026-01-08T18:02:00Z", "endISO": "2026-01-08T19:00:00Z", "resolvedISO": "2026-01-08T20:22:22.575000Z", "updatedISO": "2026-01-15T21:03:27.699000Z", "updates": 4, "platform": "Azure", "region": "West Europe (Netherlands) - Applications", "component": "Azure - West Europe (Netherlands) - Applications | AWS - Asia Pacific (Sydney) - Applications | AWS - Europe (Frankfurt) - Applications | AWS - Europe (Ireland) - Applications | AWS - Asia Pacific (Singapore) - Applications | Azure - Australia East (New South Wales) - Applications | AWS - Canada (Central) - Applications | Azure - Canada Central (Toronto) - Applications | Azure - Southeast Asia (Singapore) - Applications | AWS - US East (Ohio) - Applications | AWS - Asia Pacific (Tokyo) - Applications | Azure - West US 2 (Washington) - Applications | GCP - US Central 1 (Iowa) - Applications | GCP - Europe West 4 (Eemshaven) - Applications | AWS - Asia Pacific (Mumbai) - Applications | Azure - Switzerland North (Zürich) - Applications | GCP - Europe West 2 (London) - Applications | AWS - Europe (London) - Applications | Azure - Central US (Iowa) - Applications | AWS - Asia Pacific (Seoul) - Applications | Azure - North Europe (Ireland) - Applications | Azure - Japan East (Tokyo, Saitama) - Applications | AWS - Europe (Stockholm) - Applications | Azure - UAE North (Dubai) - Applications | Azure - South Central US (Texas) - Applications | Azure - Central India (Pune) - Applications | AWS - Asia Pacific (Osaka) - Applications | GCP - US East 4 (N. Virginia) - Applications | AWS - South America (São Paulo) - Applications | Azure - UK South (London) - Applications | AWS - Europe (Paris) - Applications | AWS - Asia Pacific (Jakarta) - Applications | AWS - Europe (Zürich) - Applications | GCP - Europe West 3 (Frankfurt) - Applications | GCP - Middle East (Dammam) - Applications | Azure - Mexico (Central) - Applications | Azure - Central Korea (Seoul) - Applications | AWS - Africa (Cape Town) - Applications", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0149526](https://community.snowflake.com/s/article/INC0149526)"}, {"name": "Azure - West US 2 (Washington): INC0149493", "id": "2659vjbnzcld", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2026-01-08T09:02:00Z", "endISO": "2026-01-08T10:43:00Z", "resolvedISO": "2026-01-08T12:18:09.654000Z", "updatedISO": "2026-01-16T14:51:50.601000Z", "updates": 7, "platform": "Azure", "region": "West US 2 (Washington) - Applications", "component": "Azure - West US 2 (Washington) - Applications", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0149493](https://community.snowflake.com/s/article/INC0149493)"}, {"name": "INC0148543", "id": "xdxj4klf7sc5", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2025-12-16T02:55:00Z", "endISO": "2025-12-16T15:59:00Z", "resolvedISO": "2025-12-16T17:25:38.355000Z", "updatedISO": "2025-12-20T02:09:01.995000Z", "updates": 19, "platform": "AWS", "region": "US West (Oregon) - Databases, Tables, and Views", "component": "AWS - US West (Oregon) - Databases, Tables, and Views | AWS - US West (Oregon) - Data Loading and Unloading | Azure - East US 2 (Virginia) - Databases, Tables, and Views | Azure - East US 2 (Virginia) - Data Loading and Unloading | AWS - Europe (Ireland) - Databases, Tables, and Views | AWS - Europe (Ireland) - Data Loading and Unloading | Azure - Southeast Asia (Singapore) - Databases, Tables, and Views | Azure - Southeast Asia (Singapore) - Data Loading and Unloading | AWS - Asia Pacific (Mumbai) - Databases, Tables, and Views | AWS - Asia Pacific (Mumbai) - Data Loading and Unloading | Azure - Switzerland North (Zürich) - Databases, Tables, and Views | Azure - Switzerland North (Zürich) - Data Loading and Unloading | GCP - Europe West 2 (London) - Databases, Tables, and Views | GCP - Europe West 2 (London) - Data Loading and Unloading | Azure - Mexico (Central) - Databases, Tables, and Views | Azure - Mexico (Central) - Data Loading and Unloading | Azure - Sweden Central (Gävle) - Data Loading and Unloading", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0148543](https://community.snowflake.com/s/article/INC0148543)"}, {"name": "AWS - US West (Oregon): INC0148166", "id": "b66r9g23j04m", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2025-12-09T23:45:00Z", "endISO": "2025-12-10T00:23:00Z", "resolvedISO": "2025-12-10T01:59:11.020000Z", "updatedISO": "2025-12-16T01:07:23.829000Z", "updates": 4, "platform": "AWS", "region": "US West (Oregon) - Databases, Tables, and Views", "component": "AWS - US West (Oregon) - Databases, Tables, and Views", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site:   [https://community.snowflake.com/s/article/INC0148166](https://community.snowflake.com/s/article/INC0148166)"}, {"name": "Azure - Australia East (New South Wales): INC0147071", "id": "z78t3ckmgrc6", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2025-11-20T19:50:00Z", "endISO": "2025-11-20T21:15:00Z", "resolvedISO": "2025-11-20T23:01:14.073000Z", "updatedISO": "2025-12-02T22:39:28.699000Z", "updates": 5, "platform": "Azure", "region": "Australia East (New South Wales) - Databases, Tables, and Views", "component": "Azure - Australia East (New South Wales) - Databases, Tables, and Views", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0147071](https://community.snowflake.com/s/article/INC0147071)"}, {"name": "AWS - US East (N. Virginia): INC0146924", "id": "tc0rx4jmzyqs", "status": "postmortem", "impact": "none", "flag": "", "startISO": "2025-11-19T04:13:00Z", "endISO": "2025-11-19T06:18:00Z", "resolvedISO": "2025-11-19T06:49:31.456000Z", "updatedISO": "2025-11-27T00:01:15.299000Z", "updates": 2, "platform": "AWS", "region": "US East (N. Virginia) - Snowpark Container Services", "component": "AWS - US East (N. Virginia) - Snowpark Container Services", "oldStatus": "operational", "newStatus": "major_outage", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0146924](https://community.snowflake.com/s/article/INC0146924)"}, {"name": "Azure - East US 2 (Virginia): INC0146178", "id": "ybgs43g1d3cc", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2025-11-05T15:27:00Z", "endISO": "2025-11-05T18:36:00Z", "resolvedISO": "2025-11-05T20:10:39.265000Z", "updatedISO": "2025-11-14T00:14:03.202000Z", "updates": 6, "platform": "Azure", "region": "East US 2 (Virginia) - Applications", "component": "Azure - East US 2 (Virginia) - Applications", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0146178](https://community.snowflake.com/s/article/INC0146178)"}, {"name": "Azure - Australia East (New South Wales): INC0146060", "id": "fp29113n10dm", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2025-11-03T20:00:00Z", "endISO": "2025-11-03T20:39:00Z", "resolvedISO": "2025-11-03T21:23:11.717000Z", "updatedISO": "2025-11-20T15:28:39.992000Z", "updates": 4, "platform": "Azure", "region": "Australia East (New South Wales) - Virtual Warehouses", "component": "Azure - Australia East (New South Wales) - Virtual Warehouses", "oldStatus": "operational", "newStatus": "operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0146060](https://community.snowflake.com/s/article/INC0146060)"}, {"name": "INC0145420", "id": "bnwxc6yl0xvm", "status": "postmortem", "impact": "minor", "flag": "", "startISO": "2025-10-22T19:00:00Z", "endISO": "2025-10-22T20:45:00Z", "resolvedISO": "2025-10-22T21:30:35.034000Z", "updatedISO": "2025-10-30T21:33:42.186000Z", "updates": 4, "platform": "AWS", "region": "US West (Oregon) - Databases, Tables, and Views", "component": "AWS - US West (Oregon) - Databases, Tables, and Views | AWS - US West (Oregon) - Data Loading and Unloading | AWS - US East (N. Virginia) - Databases, Tables, and Views | AWS - US East (N. Virginia) - Data Loading and Unloading", "oldStatus": "operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0145420](https://community.snowflake.com/s/article/INC0145420)"}, {"name": "INC0145263", "id": "gvmvnx7lyxjj", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2025-10-20T07:20:00Z", "endISO": "2025-10-20T21:18:00Z", "resolvedISO": "2025-10-21T01:57:49.559000Z", "updatedISO": "2025-11-04T06:01:23.702000Z", "updates": 18, "platform": "AWS", "region": "US East (N. Virginia) - Databases, Tables, and Views", "component": "AWS - US East (N. Virginia) - Databases, Tables, and Views | AWS - US East (N. Virginia) - Virtual Warehouses | AWS - US East (N. Virginia) - Data Loading and Unloading | AWS - US East (N. Virginia) - Applications | AWS - US East (N. Virginia) - Snowpark Container Services | AWS - US East (N. Virginia) - AI and ML | AWS - US East (Commercial Gov-Virginia) - Databases, Tables, and Views | AWS - US East (Commercial Gov-Virginia) - Virtual Warehouses | AWS - US East (Commercial Gov-Virginia) - Data Loading and Unloading | AWS - US East (Commercial Gov-Virginia) - Applications | AWS - US East (Commercial Gov-Virginia) - Snowpark Container Services | AWS - US East (Commercial Gov-Virginia) - AI and ML", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0145263](https://community.snowflake.com/s/article/INC0145263)"}, {"name": "AWS - GovCloud (US-East): INC0144987", "id": "875qk74tj33f", "status": "postmortem", "impact": "critical", "flag": "", "startISO": "2025-10-14T20:35:00Z", "endISO": "2025-10-14T22:31:00Z", "resolvedISO": "2025-10-14T23:31:40.883000Z", "updatedISO": "2025-10-22T00:25:53.547000Z", "updates": 5, "platform": "AWS", "region": "GovCloud (US-East) - Databases, Tables, and Views", "component": "AWS - GovCloud (US-East) - Databases, Tables, and Views | AWS - GovCloud (US-East) - Virtual Warehouses | AWS - GovCloud (US-East) - Data Loading and Unloading | AWS - GovCloud (US-East) - Applications | AWS - GovCloud (US-East) - Snowpark Container Services | AWS - GovCloud (US-East) - Security and Privacy Features | AWS - GovCloud (US-East) - AI and ML | AWS - GovCloud (US-East) - Organization and Account Management | AWS - GovCloud (US-East) - Listings and Collaboration | AWS - GovCloud (US-East) - Alerts and Notifications | AWS - GovCloud (US-East) - Developer Tools | AWS - GovCloud (US-East) - Business Continuity", "oldStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "newStatus": "operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational | operational", "updateBody": "Snowflake Engineering has completed the postmortem of this service incident. A detailed Root Cause Analysis \\(RCA\\) is available on the Snowflake Community site: [https://community.snowflake.com/s/article/INC0144987](https://community.snowflake.com/s/article/INC0144987)"}];
+
+
+// ============================================================
+// SORT ENGINE — field-based, reads data-sort-val from each td
+// ============================================================
+function attachSort(tableId){
+  const table=document.getElementById(tableId);if(!table)return;
+  const headers=[...table.querySelectorAll('th.sortable')];
+  const tbody=table.querySelector('tbody');
+  let curField='',curDir=1;
+  headers.forEach(th=>{
+    th.addEventListener('click',()=>{
+      const field=th.dataset.field;
+      const type=th.dataset.type||'str';
+      curDir=(curField===field)?curDir*-1:1;
+      curField=field;
+      headers.forEach(h=>h.classList.remove('sort-asc','sort-desc'));
+      th.classList.add(curDir===1?'sort-asc':'sort-desc');
+      const rows=[...tbody.querySelectorAll('tr')];
+      rows.sort((a,b)=>{
+        const ca=a.querySelector(`td[data-field="${field}"]`);
+        const cb=b.querySelector(`td[data-field="${field}"]`);
+        if(!ca||!cb)return 0;
+        const sva=ca.dataset.sortVal, svb=cb.dataset.sortVal;
+        if(sva!==undefined&&svb!==undefined){
+          const fa=parseFloat(sva),fb=parseFloat(svb);
+          return(fa-fb)*curDir;
+        }
+        const ta=ca.textContent.trim().toLowerCase();
+        const tb=cb.textContent.trim().toLowerCase();
+        if(type==='impact')
+          return((IMPACT_ORDER[ta.split(' ')[0]]??99)-(IMPACT_ORDER[tb.split(' ')[0]]??99))*curDir;
+        return ta<tb?-curDir:ta>tb?curDir:0;
+      });
+      rows.forEach(r=>tbody.appendChild(r));
+    });
+  });
+}
+
+// ============================================================
+// DATA
+// ============================================================
+const incidents=[
+  {name:"INC20000168",id:"n54hrszdq7h7",status:"resolved",impact:"major",flag:"recent",
+   startISO:"2026-08-20T13:25:00Z",endISO:"2026-08-20T14:10:00Z",resolvedISO:"2026-08-20T15:43:18Z",updatedISO:"2026-08-20T15:43:18Z",
+   updates:4,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Security and Privacy Features",
+   oldStatus:"partial_outage",newStatus:"operational",
+   updateBody:"RESOLVED: CSP confirmed mitigation complete; Snowflake independently verified service restored. PrivateLink connectivity issue caused by 3rd-party CSP virtual networking infrastructure issue (suspected recurrence). RCA within 10 business days."},
+
+  {name:"INC20000163",id:"yk5sqhcjp266",status:"resolved",impact:"major",flag:"",
+   startISO:"2026-08-18T11:20:00Z",endISO:"2026-08-18T13:45:00Z",resolvedISO:"2026-08-18T14:51:45Z",updatedISO:"2026-08-18T14:51:45Z",
+   updates:4,platform:"AWS",region:"AWS - US East (N. Virginia)",
+   component:"AWS - US East (N. Virginia) - AI and ML",
+   oldStatus:"partial_outage",newStatus:"operational",
+   updateBody:"RESOLVED: Fix implemented and environment monitored. Cortex Code AI/ML services via Snowsight fully restored. Root cause: resource exhaustion in compute infrastructure. RCA within 5 business days."},
+
+  {name:"INC20000158",id:"v8nyb5fhd95v",status:"resolved",impact:"critical",flag:"",
+   startISO:"2026-08-14T17:05:00Z",endISO:"2026-08-14T18:12:00Z",resolvedISO:"2026-08-14T19:35:34Z",updatedISO:"2026-08-14T19:35:34Z",
+   updates:4,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Applications",
+   oldStatus:"major_outage",newStatus:"operational",
+   updateBody:"RESOLVED: Config reverted + infrastructure restarted; Snowsight 503 errors resolved. Root cause: routine system config change elevated metadata layer latency. RCA within 5 business days."},
+
+  {name:"INC20000157",id:"ylfhrtlppdlt",status:"resolved",impact:"critical",flag:"",
+   startISO:"2026-08-14T14:20:00Z",endISO:"2026-08-14T14:45:00Z",resolvedISO:"2026-08-14T16:28:44Z",updatedISO:"2026-08-14T16:28:44Z",
+   updates:2,platform:"AWS",region:"AWS - US East (Ohio)",
+   component:"AWS - US East (Ohio) - Applications",
+   oldStatus:"degraded_performance",newStatus:"operational",
+   updateBody:"RESOLVED: Service infrastructure layer for auth/session initiation entered unhealthy state causing login failures. RCA within 5 business days."},
+
+  {name:"INC20000139",id:"j7drswl3ssy7",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-08-05T11:40:00Z",endISO:"2026-08-05T15:00:00Z",resolvedISO:"2026-08-05T15:49:46Z",updatedISO:"2026-08-14T06:59:05Z",
+   updates:5,platform:"AWS",region:"AWS - US East (N. Virginia)",
+   component:"AWS - US East (N. Virginia) - AI and ML",
+   oldStatus:"degraded_performance",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000139"},
+
+  {name:"INC20000129",id:"xfv4kdj30rcb",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-08-03T13:33:00Z",endISO:"2026-08-03T16:36:00Z",resolvedISO:"2026-08-03T20:58:46Z",updatedISO:"2026-08-11T01:02:53Z",
+   updates:9,platform:"AWS",region:"AWS - US East (Ohio)",
+   component:"AWS - US East (Ohio) - Virtual Warehouses",
+   oldStatus:"major_outage",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000129"},
+
+  {name:"INC20000128",id:"ns7hfk8pbqfy",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-08-03T00:53:00Z",endISO:"2026-08-03T06:15:00Z",resolvedISO:"2026-08-03T08:15:16Z",updatedISO:"2026-08-11T02:01:21Z",
+   updates:6,platform:"AWS",region:"AWS - Asia Pacific (Tokyo)",
+   component:"AWS - Asia Pacific (Tokyo) - Applications",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000128"},
+
+  {name:"INC20000115",id:"0js22rxjm66q",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-07-30T00:18:00Z",endISO:"2026-07-30T03:52:00Z",resolvedISO:"2026-07-30T04:56:55Z",updatedISO:"2026-08-10T04:32:06Z",
+   updates:5,platform:"AWS",region:"Global — 32 regions (AWS/Azure)",
+   component:"Applications (32 regions across AWS/Azure)",
+   oldStatus:"major_outage (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000115"},
+
+  {name:"INC20000106",id:"0yt2v05n42gz",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-07-25T07:45:00Z",endISO:"2026-07-25T15:05:00Z",resolvedISO:"2026-07-25T16:01:31Z",updatedISO:"2026-07-31T20:38:42Z",
+   updates:8,platform:"Azure",region:"Azure - Central US (Iowa)",
+   component:"Azure - Central US (Iowa) - Databases, Tables, and Views | Virtual Warehouses",
+   oldStatus:"degraded_performance (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000106"},
+
+  {name:"INC20000085",id:"46l87jjm2m5f",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-07-11T16:35:00Z",endISO:"2026-07-11T18:10:00Z",resolvedISO:"2026-07-11T19:36:26Z",updatedISO:"2026-07-18T01:43:04Z",
+   updates:4,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Virtual Warehouses",
+   oldStatus:"degraded_performance",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000085"},
+
+  {name:"INC20000082",id:"kw59fjhlv3jq",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-07-10T13:26:00Z",endISO:"2026-07-10T14:33:00Z",resolvedISO:"2026-07-10T16:28:21Z",updatedISO:"2026-07-18T01:03:55Z",
+   updates:5,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Applications | Security and Privacy Features",
+   oldStatus:"partial_outage (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000082"},
+
+  {name:"INC20000063",id:"rqkrpr2hf7f7",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-06-30T21:47:00Z",endISO:"2026-06-30T22:03:00Z",resolvedISO:"2026-06-30T23:34:16Z",updatedISO:"2026-07-08T23:15:30Z",
+   updates:4,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Applications",
+   oldStatus:"major_outage",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000063"},
+
+  {name:"INC20000052",id:"w9qjc26y18rn",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-06-24T15:10:00Z",endISO:"2026-06-24T15:50:00Z",resolvedISO:"2026-06-24T17:22:59Z",updatedISO:"2026-07-02T17:01:53Z",
+   updates:5,platform:"AWS",region:"AWS - US East (N. Virginia)",
+   component:"AWS - US East (N. Virginia) - Databases, Tables, and Views | Virtual Warehouses | Data Loading and Unloading | Applications",
+   oldStatus:"major_outage (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000052"},
+
+  {name:"INC20000047",id:"j3xz9wrt22vp",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-06-23T15:20:00Z",endISO:"2026-06-24T05:10:00Z",resolvedISO:"2026-06-24T07:30:58Z",updatedISO:"2026-07-02T22:00:13Z",
+   updates:10,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Applications | Snowpark Container Services",
+   oldStatus:"partial_outage (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000047"},
+
+  {name:"INC20000046",id:"0nxtj28g9ycc",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-06-22T22:38:00Z",endISO:"2026-06-23T01:28:00Z",resolvedISO:"2026-06-23T02:35:33Z",updatedISO:"2026-07-02T21:48:22Z",
+   updates:4,platform:"AWS",region:"AWS - Europe (London)",
+   component:"AWS - Europe (London) - Applications | Snowpark Container Services",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000046"},
+
+  {name:"AWS - US West (Oregon): INC0159680",id:"zn8xxp2qzpr1",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-06-22T20:12:00Z",endISO:"2026-06-22T21:45:00Z",resolvedISO:"2026-06-23T00:26:09Z",updatedISO:"2026-06-30T19:17:10Z",
+   updates:7,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Databases, Tables, and Views | Data Loading and Unloading",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0159680"},
+
+  {name:"INC0159144",id:"dt63jcq37152",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-06-16T00:03:00Z",endISO:"2026-06-16T17:29:00Z",resolvedISO:"2026-06-16T20:20:49Z",updatedISO:"2026-06-24T21:58:57Z",
+   updates:7,platform:"Global",region:"Global — 53 regions (AWS/Azure/GCP)",
+   component:"Applications (53 regions)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0159144"},
+
+  {name:"INC20000034",id:"x9085gh79r3x",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-06-15T14:15:00Z",endISO:"2026-06-15T21:45:00Z",resolvedISO:"2026-06-16T21:15:16Z",updatedISO:"2026-07-02T21:59:09Z",
+   updates:9,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Applications",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000034"},
+
+  {name:"INC20000033",id:"g4d0vxhf0tns",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-06-12T15:10:00Z",endISO:"2026-06-12T19:15:00Z",resolvedISO:"2026-06-12T20:57:13Z",updatedISO:"2026-06-22T22:22:57Z",
+   updates:5,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Developer Tools",
+   oldStatus:"degraded_performance",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000033"},
+
+  {name:"INC20000032",id:"980k6ghp4qwb",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-06-10T23:23:00Z",endISO:"2026-06-10T23:58:00Z",resolvedISO:"2026-06-11T00:30:45Z",updatedISO:"2026-06-18T04:00:05Z",
+   updates:2,platform:"Azure",region:"Azure - East US (Virginia)",
+   component:"Azure - East US (Virginia) - Applications",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000032"},
+
+  {name:"INC20000030",id:"655fr2b9cl57",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-06-08T14:58:00Z",endISO:"2026-06-08T15:20:00Z",resolvedISO:"2026-06-08T16:40:37Z",updatedISO:"2026-06-16T02:07:43Z",
+   updates:4,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Applications",
+   oldStatus:"major_outage",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC20000030"},
+
+  {name:"Azure - West US 2 (Washington): INC0157956",id:"4w8gm09dsr8p",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-05-29T04:24:00Z",endISO:"2026-05-29T07:24:00Z",resolvedISO:"2026-05-29T22:28:54Z",updatedISO:"2026-06-12T09:39:18Z",
+   updates:7,platform:"Azure",region:"Azure - West US 2 (Washington)",
+   component:"Azure - West US 2 (Washington) - Virtual Warehouses",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0157956"},
+
+  {name:"INC0157230",id:"mkbgc4vgdhdb",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-05-14T22:50:00Z",endISO:"2026-05-15T04:05:00Z",resolvedISO:"2026-05-15T05:25:07Z",updatedISO:"2026-05-22T00:26:25Z",
+   updates:4,platform:"AWS",region:"Multi-region (AWS/Azure) — AI and ML",
+   component:"AWS/Azure — AI and ML (4 regions)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0157230"},
+
+  {name:"INC0157155",id:"mz5w4kshds0w",status:"resolved",impact:"none",flag:"",
+   startISO:"",endISO:"",resolvedISO:"2026-05-14T00:19:53Z",updatedISO:"2026-05-14T00:25:33Z",
+   updates:3,platform:"Global",region:"Global — 36 regions",
+   component:"Business Continuity (36 regions)",
+   oldStatus:"partial_outage (all)",newStatus:"operational (all)",
+   updateBody:"False positive confirmed. No customer replication operations impacted."},
+
+  {name:"Azure - West US 2 (Washington): INC0156645",id:"z2h7mnkrxdxh",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-05-04T12:03:00Z",endISO:"2026-05-05T08:54:00Z",resolvedISO:"2026-05-05T12:30:00Z",updatedISO:"2026-05-13T00:16:53Z",
+   updates:7,platform:"Azure",region:"Azure - West US 2 (Washington)",
+   component:"Azure - West US 2 (Washington) - Organization and Account Management",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0156645"},
+
+  {name:"Azure - UK South (London): INC0156355",id:"3g6k24d9ws1k",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-04-29T02:05:00Z",endISO:"2026-04-29T04:11:00Z",resolvedISO:"2026-04-29T04:44:46Z",updatedISO:"2026-05-07T02:26:54Z",
+   updates:5,platform:"Azure",region:"Azure - UK South (London)",
+   component:"Azure - UK South (London) - Snowpark Container Services",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0156355"},
+
+  {name:"GCP - US Central 1 (Iowa): INC0155608",id:"0lj68wp0lphb",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-04-16T12:25:00Z",endISO:"2026-04-16T13:45:00Z",resolvedISO:"2026-04-16T15:08:37Z",updatedISO:"2026-04-23T22:14:43Z",
+   updates:3,platform:"GCP",region:"GCP - US Central 1 (Iowa)",
+   component:"GCP - US Central 1 (Iowa) - Applications",
+   oldStatus:"partial_outage",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0155608"},
+
+  {name:"Azure - East US 2 (Virginia): INC0155020",id:"g47n1w0d9v90",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-04-07T17:47:00Z",endISO:"2026-04-07T19:45:00Z",resolvedISO:"2026-04-07T20:56:12Z",updatedISO:"2026-04-15T00:32:54Z",
+   updates:5,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Databases, Tables, and Views | Virtual Warehouses | Data Loading and Unloading | Applications",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0155020"},
+
+  {name:"INC0154408",id:"xj5gygqqc5w8",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-03-27T00:00:00Z",endISO:"2026-03-29T05:55:00Z",resolvedISO:"2026-03-30T21:38:03Z",updatedISO:"2026-04-06T18:35:35Z",
+   updates:5,platform:"Global",region:"Global — 51 regions",
+   component:"Developer Tools (51 regions across AWS/Azure/GCP)",
+   oldStatus:"degraded_performance / operational",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0154408"},
+
+  {name:"AWS - US West (Oregon): INC0154019",id:"p3x136d3mcsp",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-03-21T05:27:00Z",endISO:"2026-03-21T06:18:00Z",resolvedISO:"2026-03-21T07:12:20Z",updatedISO:"2026-03-27T23:20:09Z",
+   updates:5,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Full Region (12 components)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0154019"},
+
+  {name:"INC0153706",id:"cy1j8q1htyy9",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-03-14T14:53:00Z",endISO:"2026-03-17T04:39:00Z",resolvedISO:"2026-03-17T05:49:50Z",updatedISO:"2026-03-25T00:01:01Z",
+   updates:5,platform:"Global",region:"Global — 32 regions",
+   component:"Alerts and Notifications (32 regions)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0153706"},
+
+  {name:"INC0153465",id:"kpkc19wpf1m0",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-03-12T16:30:00Z",endISO:"2026-03-12T20:39:00Z",resolvedISO:"2026-03-12T23:13:03Z",updatedISO:"2026-03-19T21:28:24Z",
+   updates:5,platform:"Global",region:"Global — 45 regions",
+   component:"AI and ML (45 regions across AWS/Azure/GCP)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0153465"},
+
+  {name:"AWS - Europe (Zürich): INC0153183",id:"6ghqh8nfw4wc",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-03-07T19:30:00Z",endISO:"2026-03-07T21:10:00Z",resolvedISO:"2026-03-07T22:20:05Z",updatedISO:"2026-03-20T21:40:58Z",
+   updates:5,platform:"AWS",region:"AWS - Europe (Zürich)",
+   component:"AWS - Europe (Zürich) - Full Region (13 components)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0153183"},
+
+  {name:"AWS - Middle East (UAE): INC0152681",id:"rby2mg3mxmvp",status:"resolved",impact:"critical",flag:"",
+   startISO:"2026-03-01T12:25:00Z",endISO:"",resolvedISO:"2026-05-15T15:10:37Z",updatedISO:"2026-05-15T15:10:37Z",
+   updates:12,platform:"AWS",region:"AWS - Middle East (UAE)",
+   component:"AWS - Middle East (UAE) - Full Region (12 components)",
+   oldStatus:"major_outage (all)",newStatus:"major_outage (all)",
+   updateBody:"Region removed from available listings following CSP advice."},
+
+  {name:"Azure - Canada Central (Toronto): INC0152309",id:"8mj6n9xzhc96",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2026-02-23T19:26:00Z",endISO:"2026-02-23T21:11:00Z",resolvedISO:"2026-02-23T22:07:16Z",updatedISO:"2026-03-02T22:46:44Z",
+   updates:4,platform:"Azure",region:"Azure - Canada Central (Toronto)",
+   component:"Azure - Canada Central (Toronto) - Applications | Snowpark Container Services",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0152309"},
+
+  {name:"Azure - Central US (Iowa): INC0150687",id:"r32lgfpkzw0y",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-01-27T17:51:00Z",endISO:"2026-01-27T18:25:00Z",resolvedISO:"2026-01-27T19:30:39Z",updatedISO:"2026-02-04T03:40:43Z",
+   updates:4,platform:"Azure",region:"Azure - Central US (Iowa)",
+   component:"Azure - Central US (Iowa) - Databases, Tables, and Views | Data Loading and Unloading",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0150687"},
+
+  {name:"AWS - US West (Oregon): INC0150440",id:"0w11t7x10rzg",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-01-22T19:02:00Z",endISO:"2026-01-22T19:30:00Z",resolvedISO:"2026-01-22T23:24:05Z",updatedISO:"2026-01-29T01:46:31Z",
+   updates:5,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Applications",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0150359-and-INC0150440"},
+
+  {name:"AWS - US West (Oregon): INC0150359",id:"s2j1bnnjshl4",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-01-21T19:00:00Z",endISO:"2026-01-21T20:08:00Z",resolvedISO:"2026-01-21T21:57:57Z",updatedISO:"2026-01-29T01:46:53Z",
+   updates:7,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Applications",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0150359-and-INC0150440"},
+
+  {name:"INC0149526",id:"zkz78zszy9wc",status:"postmortem",impact:"major",flag:"",
+   startISO:"2026-01-08T18:02:00Z",endISO:"2026-01-08T19:00:00Z",resolvedISO:"2026-01-08T20:22:22Z",updatedISO:"2026-01-15T21:03:27Z",
+   updates:4,platform:"Global",region:"Global — 38 regions",
+   component:"Applications (38 regions)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0149526"},
+
+  {name:"Azure - West US 2 (Washington): INC0149493",id:"2659vjbnzcld",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2026-01-08T09:02:00Z",endISO:"2026-01-08T10:43:00Z",resolvedISO:"2026-01-08T12:18:09Z",updatedISO:"2026-01-16T14:51:50Z",
+   updates:7,platform:"Azure",region:"Azure - West US 2 (Washington)",
+   component:"Azure - West US 2 (Washington) - Applications",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0149493"},
+
+  {name:"INC0148543",id:"xdxj4klf7sc5",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2025-12-16T02:55:00Z",endISO:"2025-12-16T15:59:00Z",resolvedISO:"2025-12-16T17:25:38Z",updatedISO:"2025-12-20T02:09:01Z",
+   updates:19,platform:"AWS",region:"Multi-region (AWS/Azure/GCP)",
+   component:"Databases, Tables, and Views | Data Loading and Unloading (17 regions)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0148543"},
+
+  {name:"AWS - US West (Oregon): INC0148166",id:"b66r9g23j04m",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2025-12-09T23:45:00Z",endISO:"2025-12-10T00:23:00Z",resolvedISO:"2025-12-10T01:59:11Z",updatedISO:"2025-12-16T01:07:23Z",
+   updates:4,platform:"AWS",region:"AWS - US West (Oregon)",
+   component:"AWS - US West (Oregon) - Databases, Tables, and Views",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0148166"},
+
+  {name:"Azure - Australia East (New South Wales): INC0147071",id:"z78t3ckmgrc6",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2025-11-20T19:50:00Z",endISO:"2025-11-20T21:15:00Z",resolvedISO:"2025-11-20T23:01:14Z",updatedISO:"2025-12-02T22:39:28Z",
+   updates:5,platform:"Azure",region:"Azure - Australia East (New South Wales)",
+   component:"Azure - Australia East (New South Wales) - Databases, Tables, and Views",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0147071"},
+
+  {name:"AWS - US East (N. Virginia): INC0146924",id:"tc0rx4jmzyqs",status:"postmortem",impact:"none",flag:"",
+   startISO:"2025-11-19T04:13:00Z",endISO:"2025-11-19T06:18:00Z",resolvedISO:"2025-11-19T06:49:31Z",updatedISO:"2025-11-27T00:01:15Z",
+   updates:2,platform:"AWS",region:"AWS - US East (N. Virginia)",
+   component:"AWS - US East (N. Virginia) - Snowpark Container Services",
+   oldStatus:"operational",newStatus:"major_outage",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0146924"},
+
+  {name:"Azure - East US 2 (Virginia): INC0146178",id:"ybgs43g1d3cc",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2025-11-05T15:27:00Z",endISO:"2025-11-05T18:36:00Z",resolvedISO:"2025-11-05T20:10:39Z",updatedISO:"2025-11-14T00:14:03Z",
+   updates:6,platform:"Azure",region:"Azure - East US 2 (Virginia)",
+   component:"Azure - East US 2 (Virginia) - Applications",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0146178"},
+
+  {name:"Azure - Australia East (New South Wales): INC0146060",id:"fp29113n10dm",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2025-11-03T20:00:00Z",endISO:"2025-11-03T20:39:00Z",resolvedISO:"2025-11-03T21:23:11Z",updatedISO:"2025-11-20T15:28:39Z",
+   updates:4,platform:"Azure",region:"Azure - Australia East (New South Wales)",
+   component:"Azure - Australia East (New South Wales) - Virtual Warehouses",
+   oldStatus:"operational",newStatus:"operational",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0146060"},
+
+  {name:"INC0145420",id:"bnwxc6yl0xvm",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2025-10-22T19:00:00Z",endISO:"2025-10-22T20:45:00Z",resolvedISO:"2025-10-22T21:30:35Z",updatedISO:"2025-10-30T21:33:42Z",
+   updates:4,platform:"AWS",region:"AWS - US West (Oregon) / US East (N. Virginia)",
+   component:"Databases, Tables, and Views | Data Loading and Unloading (2 AWS regions)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0145420"},
+
+  {name:"INC0145263",id:"gvmvnx7lyxjj",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2025-10-20T07:20:00Z",endISO:"2025-10-20T21:18:00Z",resolvedISO:"2025-10-21T01:57:49Z",updatedISO:"2025-11-04T06:01:23Z",
+   updates:18,platform:"AWS",region:"AWS - US East (N. Virginia) / US East (Commercial Gov-Virginia)",
+   component:"AWS - US East (N. Virginia) - Full Region (6) | AWS - US East (Commercial Gov-Virginia) - Full Region (6)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0145263"},
+
+  {name:"AWS - GovCloud (US-East): INC0144987",id:"875qk74tj33f",status:"postmortem",impact:"critical",flag:"",
+   startISO:"2025-10-14T20:35:00Z",endISO:"2025-10-14T22:31:00Z",resolvedISO:"2025-10-14T23:31:40Z",updatedISO:"2025-10-22T00:25:53Z",
+   updates:5,platform:"AWS",region:"AWS - GovCloud (US-East)",
+   component:"AWS - GovCloud (US-East) - Full Region (12 components)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0144987"},
+
+  {name:"INC0144343",id:"q1bwmtqq46wb",status:"postmortem",impact:"minor",flag:"",
+   startISO:"2025-10-03T06:40:00Z",endISO:"2025-10-03T10:57:00Z",resolvedISO:"2025-10-03T12:29:56Z",updatedISO:"2025-10-10T09:22:33Z",
+   updates:4,platform:"Global",region:"Global — 46 regions",
+   component:"Applications (46 regions across all platforms)",
+   oldStatus:"operational (all)",newStatus:"operational (all)",
+   updateBody:"Postmortem complete. RCA available on Snowflake Community: INC0144343"}
+];
+
+incidents.forEach(i=>{
+  i.duration  =hoursDiff(i.startISO,i.endISO);
+  i.resolution=hoursDiff(i.startISO,i.resolvedISO);
+});
+
+// ============================================================
+// KPIs — computed from data, never hardcoded
+// ============================================================
+(function(){
+  const total=incidents.length;
+  const crit =incidents.filter(i=>i.impact==='critical').length;
+  const maj  =incidents.filter(i=>i.impact==='major').length;
+  const min  =incidents.filter(i=>i.impact==='minor').length;
+  const none =incidents.filter(i=>i.impact==='none').length;
+  const res  =incidents.filter(i=>i.status==='resolved').length;
+  const pm   =incidents.filter(i=>i.status==='postmortem').length;
+  const closed=res+pm;
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi-card">
+      <div class="kpi-number">${total}</div>
+      <div class="kpi-label">Total Incidents</div>
+      <div class="kpi-sub">Aug 2025 – Aug 2026</div>
+    </div>
+    <div class="kpi-card critical">
+      <div class="kpi-number">${crit}</div>
+      <div class="kpi-label">Critical</div>
+      <div class="kpi-sub">${Math.round(crit/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card major-kpi">
+      <div class="kpi-number">${maj}</div>
+      <div class="kpi-label">Major</div>
+      <div class="kpi-sub">${Math.round(maj/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card minor-kpi">
+      <div class="kpi-number">${min}</div>
+      <div class="kpi-label">Minor</div>
+      <div class="kpi-sub">${Math.round(min/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card none-kpi">
+      <div class="kpi-number">${none}</div>
+      <div class="kpi-label">None / Unclassified</div>
+      <div class="kpi-sub">${Math.round(none/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card resolved-kpi">
+      <div class="kpi-number">${res}</div>
+      <div class="kpi-label">Resolved</div>
+      <div class="kpi-sub">${Math.round(res/total*100)}% of total</div>
+    </div>
+    <div class="kpi-card postmortem-card">
+      <div class="kpi-number">${pm}</div>
+      <div class="kpi-label">Postmortem</div>
+      <div class="kpi-sub">${closed>0?Math.round(pm/closed*100):0}% of closed</div>
+    </div>`;
+  document.getElementById('allTableHeading').textContent=
+    `All ${total} Incidents — One Row Per Incident — All Times CDT (UTC−5)`;
+})();
+
+// ============================================================
+// TABLE BUILDERS
+// ============================================================
+function mkTd(field,text,sortVal,cls=''){
+  const sv=sortVal!==undefined?` data-sort-val="${sortVal}"`:'';
+  return`<td data-field="${field}"${sv} class="${cls}">${text}</td>`;
+}
+function durCell(field,val,isRes){
+  if(val===null||val===undefined)
+    return`<td data-field="${field}" data-sort-val="999999" class="dur-cell dur-na">N/A</td>`;
+  const t1=isRes?24:10,t2=isRes?6:2;
+  const cls=val>=t1?'dur-high':val>=t2?'dur-med':'dur-low';
+  return`<td data-field="${field}" data-sort-val="${val.toFixed(4)}" class="dur-cell ${cls}">${val.toFixed(2)}</td>`;
+}
+function ts(iso){
+  return iso?new Date(iso).getTime():9e15;
+}
+
+function buildUsEastRows(){
+  const kw=['us east (n. virginia)','us east (ohio)','us east (commercial gov-virginia)',
+            'east us 2 (virginia)','east us (virginia)'];
+  return incidents
+    .filter(i=>kw.some(k=>i.region.toLowerCase().includes(k)||i.component.toLowerCase().includes(k)))
+    .map((i,idx)=>{
+      const tr=document.createElement('tr');
+      if(i.flag==='recent')tr.classList.add('row-recently-resolved');
+      const pfx=i.flag==='recent'?'🟢 ':'';
+      tr.innerHTML=
+        mkTd('idx',   idx+1,idx+1)+
+        mkTd('name',  `${pfx}<span style="font-weight:600;font-size:0.68rem">${i.name}</span>`,i.name.toLowerCase())+
+        mkTd('id',    `<span style="font-family:monospace;font-size:0.65rem">${i.id}</span>`,i.id)+
+        mkTd('status',statusBadge(i.status),i.status)+
+        mkTd('impact',impactBadge(i.impact),IMPACT_ORDER[i.impact]??99)+
+        mkTd('region',i.region,i.region.toLowerCase(),'region-cell')+
+        `<td class="update-body-wide">${i.updateBody}</td>`+
+        mkTd('start',   fmtCDT(i.startISO),   ts(i.startISO),'ts')+
+        mkTd('end',     fmtCDT(i.endISO),     ts(i.endISO),'ts')+
+        mkTd('resolved',fmtCDT(i.resolvedISO),ts(i.resolvedISO),'ts')+
+        durCell('duration',  i.duration,  false)+
+        durCell('resolution',i.resolution,true)+
+        mkTd('component',i.component,i.component.toLowerCase(),'component-cell')+
+        mkTd('newStatus',i.newStatus,i.newStatus,'ts');
+      return tr;
+    });
+}
+
+function buildAllRows(){
+  return incidents.map((i,idx)=>{
+    const tr=document.createElement('tr');
+    if(i.flag==='recent')tr.classList.add('row-recently-resolved');
+    const pfx=i.flag==='recent'?'🟢 ':'';
+    tr.innerHTML=
+      mkTd('idx',   idx+1,idx+1)+
+      mkTd('name',  `${pfx}<span style="font-weight:600;font-size:0.67rem">${i.name}</span>`,i.name.toLowerCase())+
+      mkTd('id',    `<span style="font-family:monospace;font-size:0.62rem">${i.id}</span>`,i.id)+
+      mkTd('status',statusBadge(i.status),i.status)+
+      mkTd('impact',impactBadge(i.impact),IMPACT_ORDER[i.impact]??99)+
+      mkTd('start',   fmtCDT(i.startISO),   ts(i.startISO),'ts')+
+      mkTd('end',     fmtCDT(i.endISO),     ts(i.endISO),'ts')+
+      mkTd('resolved',fmtCDT(i.resolvedISO),ts(i.resolvedISO),'ts')+
+      mkTd('updated', fmtCDT(i.updatedISO), ts(i.updatedISO),'ts')+
+      mkTd('updates', i.updates,i.updates)+
+      durCell('duration',  i.duration,  false)+
+      durCell('resolution',i.resolution,true)+
+      mkTd('platform',`<span style="font-weight:600;font-size:0.68rem">${i.platform}</span>`,i.platform.toLowerCase())+
+      mkTd('region',i.region,i.region.toLowerCase(),'component-cell')+
+      mkTd('oldStatus',i.oldStatus,i.oldStatus,'ts')+
+      mkTd('newStatus',i.newStatus,i.newStatus,'ts')+
+      `<td class="update-body">${i.updateBody}</td>`;
+    return tr;
+  });
+}
+
+function renderRows(tbodyId,rows){
+  const tbody=document.getElementById(tbodyId);
+  rows.forEach(r=>tbody.appendChild(r));
+}
+renderRows('usEastBody',buildUsEastRows());
+renderRows('allBody',   buildAllRows());
+attachSort('usEastTable');
+attachSort('allTable');
+
+// ── CHARTS ────────────────────────────────────────────────
+
+(function(){
+  const c={critical:0,major:0,minor:0,none:0};
+  incidents.forEach(i=>c[i.impact]=(c[i.impact]||0)+1);
+  new Chart(document.getElementById('chartImpact'),{type:'doughnut',
+    data:{labels:['Critical','Major','Minor','None'],
+      datasets:[{data:[c.critical,c.major,c.minor,c.none],
+        backgroundColor:['#e63946','#f4a261','#2a9d8f','#adb5bd'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}});
+})();
+
+(function(){
+  const c={AWS:0,Azure:0,GCP:0,Global:0};
+  incidents.forEach(i=>c[i.platform]=(c[i.platform]||0)+1);
+  new Chart(document.getElementById('chartCloud'),{type:'pie',
+    data:{labels:['AWS','Azure','GCP','Global / Multi'],
+      datasets:[{data:[c.AWS,c.Azure,c.GCP,c.Global],
+        backgroundColor:['#ff9900','#0078d4','#4285f4','#6f42c1'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}});
+})();
+
+(function(){
+  const pm=incidents.filter(i=>i.status==='postmortem').length;
+  const res=incidents.filter(i=>i.status==='resolved').length;
+  new Chart(document.getElementById('chartStatus'),{type:'doughnut',
+    data:{labels:[`Postmortem (${pm})`,`Resolved (${res})`],
+      datasets:[{data:[pm,res],backgroundColor:['#29b5e8','#27ae60'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}});
+})();
+
+(function(){
+  const comp={'Applications':0,'Databases / Tables / Views':0,'Virtual Warehouses':0,
+    'AI and ML':0,'Developer Tools':0,'Business Continuity':0,'Snowpark Container Services':0,
+    'Data Loading and Unloading':0,'Alerts and Notifications':0,'Security & Privacy':0,
+    'Org & Account Management':0,'Full Region / Other':0};
+  incidents.forEach(i=>{
+    const c=i.component.toLowerCase(),n=c.split('|').length;
+    if(n>=10)                              comp['Full Region / Other']++;
+    else if(c.includes('ai and ml'))       comp['AI and ML']++;
+    else if(c.includes('developer'))       comp['Developer Tools']++;
+    else if(c.includes('snowpark'))        comp['Snowpark Container Services']++;
+    else if(c.includes('business cont'))   comp['Business Continuity']++;
+    else if(c.includes('alerts')||c.includes('notif')) comp['Alerts and Notifications']++;
+    else if(c.includes('virtual warehouse')) comp['Virtual Warehouses']++;
+    else if(c.includes('data loading')||c.includes('unload')) comp['Data Loading and Unloading']++;
+    else if(c.includes('security')||c.includes('privacy')) comp['Security & Privacy']++;
+    else if(c.includes('organ')||c.includes('account mgmt')) comp['Org & Account Management']++;
+    else if(c.includes('database')||c.includes('tables'))    comp['Databases / Tables / Views']++;
+    else if(c.includes('application'))    comp['Applications']++;
+    else                                  comp['Full Region / Other']++;
+  });
+  const e=Object.entries(comp).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  const colors=['#29b5e8','#0a4d7c','#1a8fc1','#f4a261','#e63946','#2a9d8f','#6f42c1','#ff9900','#adb5bd','#9b59b6','#343a40','#6c757d'];
+  new Chart(document.getElementById('chartComponents'),{type:'doughnut',
+    data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}}}});
+})();
+
+(function(){
+  const rm={};incidents.forEach(i=>{rm[i.region]=(rm[i.region]||0)+1;});
+  const sorted=Object.entries(rm).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const labels=sorted.map(x=>x[0].replace('AWS - ','').replace('Azure - ','').replace('GCP - ','').replace('Global — ','Global '));
+  const colors=sorted.map(x=>x[0].startsWith('AWS')?'#ff9900':x[0].startsWith('Azure')?'#0078d4':x[0].startsWith('GCP')?'#4285f4':'#6f42c1');
+  new Chart(document.getElementById('chartRegion'),{type:'bar',
+    data:{labels,datasets:[{label:'Incidents',data:sorted.map(x=>x[1]),backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:(t)=>sorted[t[0].dataIndex][0]}}},
+      scales:{x:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'#eef3f8'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+})();
+
+(function(){
+  const weeks=[
+    {label:'Mar 2', s:new Date(2026,2,2), e:new Date(2026,2,8)},
+    {label:'Mar 9', s:new Date(2026,2,9), e:new Date(2026,2,15)},
+    {label:'Mar 16',s:new Date(2026,2,16),e:new Date(2026,2,22)},
+    {label:'Mar 23',s:new Date(2026,2,23),e:new Date(2026,2,29)},
+    {label:'Mar 30',s:new Date(2026,2,30),e:new Date(2026,3,5)},
+    {label:'Apr 6', s:new Date(2026,3,6), e:new Date(2026,3,12)},
+    {label:'Apr 13',s:new Date(2026,3,13),e:new Date(2026,3,19)},
+    {label:'Apr 20',s:new Date(2026,3,20),e:new Date(2026,3,26)},
+    {label:'Apr 27',s:new Date(2026,3,27),e:new Date(2026,4,3)},
+    {label:'May 4', s:new Date(2026,4,4), e:new Date(2026,4,10)},
+    {label:'May 11',s:new Date(2026,4,11),e:new Date(2026,4,17)},
+    {label:'May 18',s:new Date(2026,4,18),e:new Date(2026,4,24)},
+    {label:'May 25',s:new Date(2026,4,25),e:new Date(2026,4,31)},
+    {label:'Jun 1', s:new Date(2026,5,1), e:new Date(2026,5,7)},
+    {label:'Jun 8', s:new Date(2026,5,8), e:new Date(2026,5,14)},
+    {label:'Jun 15',s:new Date(2026,5,15),e:new Date(2026,5,21)},
+    {label:'Jun 22',s:new Date(2026,5,22),e:new Date(2026,5,28)},
+    {label:'Jun 29',s:new Date(2026,5,29),e:new Date(2026,6,5)},
+    {label:'Jul 6', s:new Date(2026,6,6), e:new Date(2026,6,12)},
+    {label:'Jul 13',s:new Date(2026,6,13),e:new Date(2026,6,19)},
+    {label:'Jul 20',s:new Date(2026,6,20),e:new Date(2026,6,26)},
+    {label:'Jul 27',s:new Date(2026,6,27),e:new Date(2026,7,2)},
+    {label:'Aug 3', s:new Date(2026,7,3), e:new Date(2026,7,9)},
+    {label:'Aug 10',s:new Date(2026,7,10),e:new Date(2026,7,16)},
+    {label:'Aug 17',s:new Date(2026,7,17),e:new Date(2026,7,23)},
+  ];
+  const total=[],crit=[],maj=[];
+  weeks.forEach(w=>{
+    let t=0,c=0,m=0;
+    incidents.forEach(i=>{
+      const d=i.startISO?new Date(i.startISO):null;if(!d)return;
+      if(d>=w.s&&d<=w.e){t++;if(i.impact==='critical')c++;if(i.impact==='major')m++;}
+    });
+    total.push(t);crit.push(c);maj.push(m);
+  });
+  new Chart(document.getElementById('chartWeekly'),{type:'line',
+    data:{labels:weeks.map(w=>w.label),datasets:[
+      {label:'Total',   data:total,borderColor:'#29b5e8',backgroundColor:'rgba(41,181,232,0.1)',tension:0.3,fill:true, pointBackgroundColor:'#29b5e8',borderWidth:2,pointRadius:4},
+      {label:'Critical',data:crit, borderColor:'#e63946',backgroundColor:'rgba(230,57,70,0.06)', tension:0.3,fill:false,pointBackgroundColor:'#e63946',borderWidth:2,pointRadius:4},
+      {label:'Major',   data:maj,  borderColor:'#f4a261',backgroundColor:'rgba(244,162,97,0.06)',tension:0.3,fill:false,pointBackgroundColor:'#f4a261',borderWidth:2,pointRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},
+      scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'#eef3f8'}},
+              x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}}}}});
+})();
+
+(function(){
+  const cats={'Applications Layer':0,'Database / Storage Services':0,'AI / ML Services':0,
+    'Developer Tools / APIs':0,'Snowpark / Container Services':0,'Business Continuity / Replication':0,
+    'Alerts & Notifications':0,'Virtual Warehouses / Compute':0,'Data Loading / Pipelines':0,
+    'Security & Privacy Features':0,'Org & Account Management':0,'Full Region Outage':0};
+  incidents.forEach(i=>{
+    const c=i.component.toLowerCase(),n=c.split('|').length;
+    if(n>=10)                              cats['Full Region Outage']++;
+    else if(c.includes('ai and ml'))       cats['AI / ML Services']++;
+    else if(c.includes('developer'))       cats['Developer Tools / APIs']++;
+    else if(c.includes('snowpark'))        cats['Snowpark / Container Services']++;
+    else if(c.includes('business cont'))   cats['Business Continuity / Replication']++;
+    else if(c.includes('alerts')||c.includes('notif')) cats['Alerts & Notifications']++;
+    else if(c.includes('virtual warehouse')) cats['Virtual Warehouses / Compute']++;
+    else if(c.includes('data loading')||c.includes('unload')) cats['Data Loading / Pipelines']++;
+    else if(c.includes('security')||c.includes('privacy')) cats['Security & Privacy Features']++;
+    else if(c.includes('organ')||c.includes('account mgmt')) cats['Org & Account Management']++;
+    else if(c.includes('database')||c.includes('tables'))   cats['Database / Storage Services']++;
+    else if(c.includes('application'))    cats['Applications Layer']++;
+    else cats['Applications Layer']++;
+  });
+  const e=Object.entries(cats).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  new Chart(document.getElementById('chartRootCause'),{type:'bar',
+    data:{labels:e.map(x=>x[0]),datasets:[{label:'Incidents',data:e.map(x=>x[1]),backgroundColor:'#29b5e8',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'#eef3f8'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+})();
+
+(function(){
+  const data=incidents.filter(i=>i.resolution!==null&&i.resolution<500).sort((a,b)=>b.resolution-a.resolution).slice(0,20);
+  const shortNames=data.map(i=>{const m=i.name.match(/(INC\S+)$/);return m?m[1]:i.name.substring(0,18);});
+  new Chart(document.getElementById('chartDuration'),{type:'bar',
+    data:{labels:shortNames,datasets:[
+      {label:'Duration (end−start)',       data:data.map(i=>i.duration!==null?+i.duration.toFixed(2):0),  backgroundColor:'#29b5e8',borderRadius:3},
+      {label:'Resolution (resolved−start)',data:data.map(i=>i.resolution!==null?+i.resolution.toFixed(2):0),backgroundColor:'#0a4d7c',borderRadius:3}
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:12}},
+        tooltip:{callbacks:{title:(t)=>data[t[0].dataIndex].name,label:(t)=>`${t.dataset.label}: ${t.raw} hrs`}}},
+      scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'#eef3f8'},title:{display:true,text:'Hours',font:{size:10}}},
+              y:{ticks:{font:{size:9}},grid:{display:false}}}}});
+})();
+</script>
+</body>
+</html>
