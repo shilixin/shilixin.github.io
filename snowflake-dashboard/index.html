@@ -17,7 +17,7 @@
   header{background:linear-gradient(135deg,var(--sf-dark) 0%,var(--sf-accent) 100%);color:white;padding:22px 32px;display:flex;align-items:center;gap:18px;box-shadow:0 2px 10px rgba(10,77,124,0.3);}
   header .logo{font-size:2rem;font-weight:900;letter-spacing:-1px;color:var(--sf-blue);}
   header .title-block h1{font-size:1.35rem;font-weight:700;}
-  header .title-block p{font-size:0.8rem;opacity:0.8;margin-top:2px;}
+  header .title-block p{font-size:0.8rem;opacity:0.85;margin-top:2px;}
   header .badge{margin-left:auto;background:rgba(41,181,232,0.2);border:1px solid var(--sf-blue);color:var(--sf-blue);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;}
   .active-banner{background:linear-gradient(90deg,#6d4c00,var(--identified));color:white;padding:12px 28px;display:flex;align-items:center;gap:12px;font-size:0.82rem;}
   .active-dot{width:10px;height:10px;border-radius:50%;background:#ffe27a;animation:pulse-active 1.5s infinite;flex-shrink:0;}
@@ -28,9 +28,8 @@
   .identified-card{padding:18px 20px;border-left:5px solid var(--identified);box-shadow:0 2px 12px rgba(214,137,16,0.20);margin-bottom:6px;}
   .resolved-card{padding:16px 18px;}
   .resolved-card.critical-border{border-left:5px solid var(--critical);}
-  .resolved-card.major-border{border-left:5px solid var(--major);}
   .pm-notice{padding:14px 18px;border-left:5px solid var(--sf-blue);margin-bottom:6px;}
-  .dashboard{padding:24px 28px;max-width:1600px;margin:0 auto;}
+  .dashboard{padding:24px 28px;max-width:1680px;margin:0 auto;}
   .section-title{font-size:0.95rem;font-weight:700;color:var(--sf-dark);text-transform:uppercase;letter-spacing:0.5px;margin:28px 0 14px;padding-bottom:6px;border-bottom:2px solid var(--sf-blue);display:flex;align-items:center;gap:8px;}
   .section-title::before{content:'';display:inline-block;width:4px;height:16px;background:var(--sf-blue);border-radius:2px;}
   .ic-header,.rc-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
@@ -82,7 +81,7 @@
   .table-outer{overflow-x:auto;border-radius:6px;}
   .table-inner{overflow-y:auto;max-height:540px;}
   table{width:100%;border-collapse:collapse;font-size:0.75rem;}
-  th{background:var(--sf-dark);color:white;padding:8px 10px;text-align:left;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;position:sticky;top:0;z-index:10;}
+  th{background:var(--sf-dark);color:white;padding:8px 10px;text-align:left;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;position:sticky;top:0;z-index:10;cursor:pointer;}
   td{padding:7px 10px;border-bottom:1px solid #eef3f8;vertical-align:top;line-height:1.5;}
   tr:nth-child(even) td{background:#fafcfe;}
   tr:hover td{background:var(--sf-light);}
@@ -102,6 +101,7 @@
   .update-body{max-width:340px;font-size:0.69rem;color:#445;line-height:1.5;white-space:normal;word-break:break-word;}
   .component-cell{max-width:220px;font-size:0.67rem;color:#445;}
   .ts{white-space:nowrap;font-size:0.67rem;color:#445;}
+  .latest-update-col{min-width:360px;max-width:420px;}
   .row-new td{background:#fff5f5 !important;}
   .row-pm-updated td{background:#f0f8ff !important;}
   .row-updated td{background:#f5fff8 !important;}
@@ -127,7 +127,7 @@
     <strong>⚠️ ACTIVE — INC20000150 (IDENTIFIED / MINOR)</strong> | GCP - US Central 1 (Iowa) — Virtual Warehouses + Snowpark Container Services |
     <strong style="color:#ffe27a">Updated ETA: late-October / end of October</strong>
   </div>
-  <div class="act-ts">Updated: Sep 24 2026 18:13 CDT</div>
+  <div class="act-ts">Updated: Sep 25 2026 13:34 CDT</div>
 </div>
 
 <div class="dashboard">
@@ -146,7 +146,7 @@
       Customers in GCP US Central 1 (Iowa) may still encounter failures, timeouts, or delays for <strong>Snowpark Container Services</strong> workloads and <strong>Gen2 virtual warehouses</strong>. Resource availability continues to vary with demand.<br><br>
       <strong>Workarounds:</strong> customers with virtual warehouse resume delays can migrate affected warehouses to <strong>Gen1</strong> using:
       <code>ALTER WAREHOUSE &lt;warehouse_name&gt; SET GENERATION = '1';</code>
-      Gen1 is described as a short-term mitigation only. No general workaround is available for Snowpark Container Services compute pool impact.
+      Gen1 is a short-term mitigation only. No general workaround is available for Snowpark Container Services compute pool impact.
     </div>
     <div class="ic-metrics">
       <div class="ic-metric"><div class="ic-metric-val">50+ days</div><div class="ic-metric-lbl">Duration (ongoing)</div></div>
@@ -250,18 +250,70 @@
     </div>
   </div>
 
-  <div class="section-title">Complete Incident Summary</div>
+  <div class="section-title">US East Region Incidents</div>
   <div class="table-card">
-    <h3>All 42 Incidents</h3>
-    <p class="table-subtitle">🟢 = new | 🔵 = postmortem update | 🔄 = updated active incident</p>
+    <h3>Incidents Affecting US East Regions</h3>
+    <p class="table-subtitle">
+      AWS US East (N. Virginia) · AWS US East (Ohio) · AWS US East (Commercial Gov-Virginia) ·
+      Azure East US 2 (Virginia) · Azure East US (Virginia)
+    </p>
+    <p class="sort-hint">
+      💡 Click any column header to sort — click again to reverse | Latest Update appears immediately after Region(s)
+    </p>
     <div class="table-outer">
       <div class="table-inner">
-        <table>
+        <table id="usEastTable">
           <thead>
             <tr>
-              <th>#</th><th>Incident</th><th>ID</th><th>Status</th><th>Impact</th>
-              <th>Start (CDT)</th><th>End (CDT)</th><th>Resolved (CDT)</th><th>Last Updated (CDT)</th>
-              <th>Updates</th><th>Duration</th><th>Resolution</th><th>Platform</th><th>Region</th><th>Latest Update</th>
+              <th data-field="name">Incident</th>
+              <th data-field="status">Status</th>
+              <th data-field="impact">Impact</th>
+              <th data-field="platform">Platform</th>
+              <th data-field="region">Region(s)</th>
+              <th data-field="updateBody">Latest Update</th>
+              <th data-field="startISO">Start (CDT)</th>
+              <th data-field="endISO">End (CDT)</th>
+              <th data-field="resolvedISO">Resolved (CDT)</th>
+              <th data-field="duration">Duration</th>
+              <th data-field="resolution">Resolution</th>
+              <th data-field="updates">Updates</th>
+            </tr>
+          </thead>
+          <tbody id="usEastBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Complete Incident Summary</div>
+  <div class="table-card">
+    <h3>All Incidents — One Row Per Incident — All Times CDT (UTC−5)</h3>
+    <p class="table-subtitle">
+      Duration = end_time − start_time | Resolution = incident_resolved − start_time | 🟢 = new | ⚠️ = identified | 🔵 = PM published this report
+    </p>
+    <p class="sort-hint">
+      💡 Click any column header to sort — click again to reverse
+    </p>
+    <div class="table-outer">
+      <div class="table-inner">
+        <table id="allIncidentsTable">
+          <thead>
+            <tr>
+              <th data-field="idx">#</th>
+              <th data-field="name">Incident</th>
+              <th data-field="id">ID</th>
+              <th data-field="status">Status</th>
+              <th data-field="impact">Impact</th>
+              <th data-field="startISO">Start (CDT)</th>
+              <th data-field="endISO">End (CDT)</th>
+              <th data-field="resolvedISO">Resolved (CDT)</th>
+              <th data-field="updatedISO">Last Updated (CDT)</th>
+              <th data-field="updates">Updates</th>
+              <th data-field="duration">Duration</th>
+              <th data-field="resolution">Resolution</th>
+              <th data-field="platform">Platform</th>
+              <th data-field="region">Region</th>
+              <th data-field="updateBody">Latest Update</th>
             </tr>
           </thead>
           <tbody id="allBody"></tbody>
@@ -329,6 +381,8 @@ const incidents = [
   {name:"AWS - US West (Oregon): INC0150359",id:"s2j1bnnjshl4",status:"postmortem",impact:"critical",flag:"",startISO:"2026-01-21T19:00:00Z",endISO:"2026-01-21T20:08:00Z",resolvedISO:"2026-01-21T21:57:57Z",updatedISO:"2026-01-29T01:46:53Z",updates:7,platform:"AWS",region:"AWS - US West (Oregon)",component:"Applications",updateBody:"Postmortem completed."}
 ];
 
+const sortState = {};
+
 function hoursDiff(a,b){ if(!a||!b) return null; return (new Date(b)-new Date(a))/3600000; }
 function fmtCDT(iso){
   if(!iso) return '—';
@@ -346,24 +400,54 @@ function statusBadge(s){
   if(s==='identified') return `<span class="badge-impact badge-status-identified">IDENTIFIED</span>`;
   return `<span class="badge-impact badge-status-res">RESOLVED</span>`;
 }
-function durCell(v,isRes=false){
-  if(v===null||v===undefined) return `<td class="dur-cell dur-na">N/A</td>`;
+function durTd(v,isRes=false){
+  if(v===null||v===undefined) return `<td class="dur-cell dur-na" data-sort-val="">N/A</td>`;
   const t1=isRes?24:10, t2=isRes?6:2;
   const cls=v>=t1?'dur-high':v>=t2?'dur-med':'dur-low';
-  return `<td class="dur-cell ${cls}">${v.toFixed(2)}</td>`;
+  return `<td class="dur-cell ${cls}" data-sort-val="${v}">${v.toFixed(2)}</td>`;
 }
-function rowPrefix(flag){
+function rowPrefix(flag,status){
   if(flag==='new') return '🟢 ';
+  if(status==='identified') return '⚠️ ';
   if(flag==='pm') return '🔵 ';
-  if(flag==='updated') return '🔄 ';
   return '';
 }
-function rowClass(flag){
+function rowClass(flag,status){
   if(flag==='new') return 'row-new';
   if(flag==='pm') return 'row-pm-updated';
   if(flag==='updated') return 'row-updated';
-  if(flag==='identified') return 'row-identified';
+  if(status==='identified') return 'row-identified';
   return '';
+}
+function fieldVal(item, field, idx){
+  if(field==='idx') return idx+1;
+  return item[field] ?? '';
+}
+function compareVals(a,b){
+  const av = (a===null || a===undefined) ? '' : a;
+  const bv = (b===null || b===undefined) ? '' : b;
+  const an = parseFloat(av), bn = parseFloat(bv);
+  if(av!=='' && bv!=='' && !isNaN(an) && !isNaN(bn)) return an-bn;
+  return String(av).localeCompare(String(bv));
+}
+function normalizeRegionForCount(region){
+  const r = (region || '').trim();
+
+  if (/ai and ml/i.test(r)) return 'Global AI and ML';
+  if (/global applications/i.test(r)) return 'Global Applications';
+  if (/global developer tools/i.test(r)) return 'Global Developer Tools';
+  if (/global alerts and notifications/i.test(r)) return 'Global Alerts and Notifications';
+  if (/global business continuity/i.test(r)) return 'Global Business Continuity';
+
+  if (/aws - us west \(oregon\)/i.test(r)) return 'AWS - US West (Oregon)';
+  if (/aws - us east \(n\. virginia\)/i.test(r)) return 'AWS - US East (N. Virginia)';
+  if (/aws - us east \(ohio\)/i.test(r)) return 'AWS - US East (Ohio)';
+  if (/azure - east us 2 \(virginia\)/i.test(r)) return 'Azure - East US 2 (Virginia)';
+  if (/azure - central us \(iowa\)/i.test(r)) return 'Azure - Central US (Iowa)';
+  if (/azure - west us 2 \(washington\)/i.test(r)) return 'Azure - West US 2 (Washington)';
+  if (/gcp - us central 1 \(iowa\)/i.test(r)) return 'GCP - US Central 1 (Iowa)';
+
+  return r;
 }
 
 incidents.forEach(i=>{
@@ -397,30 +481,86 @@ incidents.forEach(i=>{
     <div class="kpi-card postmortem-card"><div class="kpi-number">${postmortem}</div><div class="kpi-label">Postmortem</div><div class="kpi-sub">${Math.round(postmortem/total*100)}%</div></div>`;
 })();
 
-(function buildTable(){
+function renderAllTable(data){
   const tbody=document.getElementById('allBody');
-  incidents.forEach((i,idx)=>{
+  tbody.innerHTML = '';
+  data.forEach((i,idx)=>{
     const tr=document.createElement('tr');
-    const cls=rowClass(i.flag); if(cls) tr.className=cls;
+    const cls=rowClass(i.flag,i.status); if(cls) tr.className=cls;
     tr.innerHTML = `
-      <td>${idx+1}</td>
-      <td><strong>${rowPrefix(i.flag)}${i.name}</strong></td>
-      <td><span style="font-family:monospace;font-size:0.65rem">${i.id}</span></td>
-      <td>${statusBadge(i.status)}</td>
-      <td>${impactBadge(i.impact)}</td>
-      <td class="ts">${fmtCDT(i.startISO)}</td>
-      <td class="ts">${fmtCDT(i.endISO)}</td>
-      <td class="ts">${fmtCDT(i.resolvedISO)}</td>
-      <td class="ts">${fmtCDT(i.updatedISO)}</td>
-      <td>${i.updates}</td>
-      ${durCell(i.duration,false)}
-      ${durCell(i.resolution,true)}
-      <td>${i.platform}</td>
-      <td class="component-cell">${i.region}</td>
-      <td class="update-body">${i.updateBody}</td>`;
+      <td data-sort-val="${idx+1}">${idx+1}</td>
+      <td data-sort-val="${i.name}"><strong>${rowPrefix(i.flag,i.status)}${i.name}</strong></td>
+      <td data-sort-val="${i.id}"><span style="font-family:monospace;font-size:0.65rem">${i.id}</span></td>
+      <td data-sort-val="${i.status}">${statusBadge(i.status)}</td>
+      <td data-sort-val="${i.impact}">${impactBadge(i.impact)}</td>
+      <td class="ts" data-sort-val="${i.startISO || ''}">${fmtCDT(i.startISO)}</td>
+      <td class="ts" data-sort-val="${i.endISO || ''}">${fmtCDT(i.endISO)}</td>
+      <td class="ts" data-sort-val="${i.resolvedISO || ''}">${fmtCDT(i.resolvedISO)}</td>
+      <td class="ts" data-sort-val="${i.updatedISO || ''}">${fmtCDT(i.updatedISO)}</td>
+      <td data-sort-val="${i.updates}">${i.updates}</td>
+      ${durTd(i.duration,false)}
+      ${durTd(i.resolution,true)}
+      <td data-sort-val="${i.platform}">${i.platform}</td>
+      <td class="component-cell" data-sort-val="${i.region}">${i.region}</td>
+      <td class="update-body latest-update-col" data-sort-val="${i.updateBody}">${i.updateBody}</td>`;
     tbody.appendChild(tr);
   });
-})();
+}
+
+function renderUsEastTable(data){
+  const tbody=document.getElementById('usEastBody');
+  tbody.innerHTML = '';
+  data.forEach((i)=>{
+    const tr=document.createElement('tr');
+    const cls=rowClass(i.flag,i.status); if(cls) tr.className=cls;
+    tr.innerHTML = `
+      <td data-sort-val="${i.name}"><strong>${rowPrefix(i.flag,i.status)}${i.name}</strong></td>
+      <td data-sort-val="${i.status}">${statusBadge(i.status)}</td>
+      <td data-sort-val="${i.impact}">${impactBadge(i.impact)}</td>
+      <td data-sort-val="${i.platform}">${i.platform}</td>
+      <td class="component-cell" data-sort-val="${i.region}">${i.region}</td>
+      <td class="update-body latest-update-col" data-sort-val="${i.updateBody}">${i.updateBody}</td>
+      <td class="ts" data-sort-val="${i.startISO || ''}">${fmtCDT(i.startISO)}</td>
+      <td class="ts" data-sort-val="${i.endISO || ''}">${fmtCDT(i.endISO)}</td>
+      <td class="ts" data-sort-val="${i.resolvedISO || ''}">${fmtCDT(i.resolvedISO)}</td>
+      ${durTd(i.duration,false)}
+      ${durTd(i.resolution,true)}
+      <td data-sort-val="${i.updates}">${i.updates}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+const usEastIncidents = incidents.filter(i =>
+  /US East \(N\. Virginia\)|US East \(Ohio\)|Commercial Gov|East US 2 \(Virginia\)|East US \(Virginia\)/i.test(i.region)
+);
+
+renderAllTable([...incidents]);
+renderUsEastTable([...usEastIncidents]);
+
+function enableTableSorting(tableId, sourceData, renderFn){
+  const table = document.getElementById(tableId);
+  const headers = table.querySelectorAll('th[data-field]');
+  headers.forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const field = th.dataset.field;
+      const key = tableId + ':' + field;
+      sortState[key] = sortState[key] === 'asc' ? 'desc' : 'asc';
+      const dir = sortState[key];
+
+      const sorted = [...sourceData].sort((a,b)=>{
+        const av = fieldVal(a, field, sourceData.indexOf(a));
+        const bv = fieldVal(b, field, sourceData.indexOf(b));
+        const cmp = compareVals(av,bv);
+        return dir === 'asc' ? cmp : -cmp;
+      });
+
+      renderFn(sorted);
+    });
+  });
+}
+
+enableTableSorting('allIncidentsTable', incidents, renderAllTable);
+enableTableSorting('usEastTable', usEastIncidents, renderUsEastTable);
 
 (function charts(){
   const impactCounts = {
@@ -435,11 +575,11 @@ incidents.forEach(i=>{
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
   });
 
-  const platformMap={AWS:0,Azure:0,GCP:0,Global:0,'AWS/Azure':0,'AWS/Azure/GCP':0};
+  const platformMap={AWS:0,Azure:0,GCP:0,Global:0,'AWS/Azure':0};
   incidents.forEach(i=>{ platformMap[i.platform]=(platformMap[i.platform]||0)+1; });
   new Chart(document.getElementById('chartCloud'), {
     type:'doughnut',
-    data:{labels:Object.keys(platformMap),datasets:[{data:Object.values(platformMap),backgroundColor:['#ff9900','#0078d4','#4285f4','#6f42c1','#9b59b6','#20c997'],borderColor:'#fff',borderWidth:2}]},
+    data:{labels:Object.keys(platformMap),datasets:[{data:Object.values(platformMap),backgroundColor:['#ff9900','#0078d4','#4285f4','#6f42c1','#9b59b6'],borderColor:'#fff',borderWidth:2}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
   });
 
@@ -475,19 +615,31 @@ incidents.forEach(i=>{
   });
 
   const regionCounts={};
-  incidents.forEach(i=>{ regionCounts[i.region]=(regionCounts[i.region]||0)+1; });
+  incidents.forEach(i=>{
+    const key = normalizeRegionForCount(i.region);
+    regionCounts[key] = (regionCounts[key] || 0) + 1;
+  });
+
   const topRegions=Object.entries(regionCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
   new Chart(document.getElementById('chartRegion'),{
     type:'bar',
-    data:{labels:topRegions.map(x=>x[0].slice(0,28)),datasets:[{data:topRegions.map(x=>x[1]),backgroundColor:'#29b5e8',borderRadius:5}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{stepSize:1}},y:{grid:{display:false}}}}
+    data:{
+      labels:topRegions.map(x=>x[0]),
+      datasets:[{data:topRegions.map(x=>x[1]),backgroundColor:'#29b5e8',borderRadius:5}]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,ticks:{stepSize:1}},y:{grid:{display:false}}}
+    }
   });
 
-  const weeklyLabels=['Mar','Apr','May','Jun','Jul','Aug','Sep'];
-  const weeklyVals=[5,4,5,10,6,10,2];
+  const monthlyTrend = {'Mar':5,'Apr':4,'May':5,'Jun':10,'Jul':6,'Aug':10,'Sep':2};
   new Chart(document.getElementById('chartWeekly'),{
     type:'line',
-    data:{labels:weeklyLabels,datasets:[{label:'Incidents',data:weeklyVals,borderColor:'#29b5e8',backgroundColor:'rgba(41,181,232,0.12)',fill:true,tension:0.3}]},
+    data:{labels:Object.keys(monthlyTrend),datasets:[{label:'Incidents',data:Object.values(monthlyTrend),borderColor:'#29b5e8',backgroundColor:'rgba(41,181,232,0.12)',fill:true,tension:0.3}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}}}
   });
 
